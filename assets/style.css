@@ -246,16 +246,21 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 /* ---------- Auth pages ---------- */
 .auth-wrap { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
 .auth-hero {
-  background: var(--green); color: #fff; padding: 48px; display: flex; flex-direction: column; justify-content: space-between;
-  background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,.12), transparent 40%), radial-gradient(circle at 80% 90%, rgba(0,0,0,.12), transparent 45%);
+  color: #fff; padding: 48px; display: flex; flex-direction: column; gap: 16px;
+  background-color: #2b3a33;
+  background-image:
+    linear-gradient(180deg, rgba(20, 32, 26, .55) 0%, rgba(20, 32, 26, .15) 35%, rgba(20, 32, 26, .35) 60%, rgba(20, 32, 26, .85) 100%),
+    url("img/meeting-room.jpg");
+  background-size: cover; background-position: center;
 }
-.auth-hero.admin { background-color: var(--green-700); }
+.auth-hero > :nth-child(2) { margin-top: auto; }
+.auth-hero h1, .auth-hero ul { text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
 .auth-hero h1 { font-size: 2rem; }
 .auth-hero ul { padding-left: 18px; opacity: .92; }
 .auth-form { display: grid; place-items: center; padding: 32px 16px; background: #fff; }
 .auth-form .box { width: 100%; max-width: 380px; }
 .switch-link { text-align: center; margin-top: 18px; font-size: .9rem; }
-@media (max-width: 860px) { .auth-wrap { grid-template-columns: 1fr; } .auth-hero { padding: 28px 20px; } }
+@media (max-width: 860px) { .auth-wrap { grid-template-columns: 1fr; } .auth-hero { padding: 28px 20px; min-height: 280px; } }
 
 /* ---------- Misc ---------- */
 .alert { padding: 12px 14px; border-radius: 10px; font-size: .9rem; margin-bottom: 14px; border: 1px solid; }
