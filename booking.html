@@ -15,7 +15,7 @@
       <a class="btn btn-ghost" href="index.html">← กลับหน้าสถานะห้อง</a>
     </div>
 
-    <div class="grid" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start" id="layout">
+    <div class="grid booking-layout" id="layout">
       <form class="card" id="form" novalidate>
         <div id="errors" class="alert alert-err hidden"></div>
 
@@ -24,7 +24,7 @@
           <label>ห้องประชุม <span class="req">*</span></label>
           <div class="grid grid-2" id="roomPick"></div>
         </div>
-        <div class="row">
+        <div class="row row-dt">
           <div class="field"><label for="date">วันที่ <span class="req">*</span></label><input class="input" type="date" id="date" required></div>
           <div class="field"><label for="start">เวลาเริ่ม <span class="req">*</span></label><select id="start" required></select></div>
           <div class="field"><label for="end">เวลาสิ้นสุด <span class="req">*</span></label><select id="end" required></select></div>
@@ -73,7 +73,6 @@
       let user;
       try { user = M.requireUser(); } catch (e) { return; }
       M.renderTopbar('book');
-      if (window.innerWidth < 900) $('#layout').style.gridTemplateColumns = '1fr';
 
       const rooms = M.data.rooms;
       let roomId = Number(M.qs('room')) || (rooms.find((r) => r.open) || {}).id;

@@ -473,30 +473,55 @@
         ];
     const right = u
       ? `<div class="user-chip"><div class="avatar">${esc(u.name.slice(0, 1))}</div>
-           <div><div style="font-weight:500">${esc(u.name)} ${isAdmin ? '<span class="badge-admin">ADMIN</span>' : ''}</div>
+           <div class="who"><div style="font-weight:500">${esc(u.name)} ${isAdmin ? '<span class="badge-admin">ADMIN</span>' : ''}</div>
            <div class="dept" style="font-size:.78rem;opacity:.85">${esc(u.department)}</div></div>
-           <a href="#" id="logoutBtn" title="ออกจากระบบ">ออกจากระบบ</a></div>`
+           <a href="#" id="logoutBtn" title="ออกจากระบบ" class="logout">ออกจากระบบ</a></div>`
       : `<div class="user-chip"><a class="btn btn-sm btn-outline" style="color:var(--green-700)" href="${ROOT}login.html">เข้าสู่ระบบ</a><a href="${ROOT}admin/login.html">สำหรับแอดมิน</a></div>`;
     const html = `
       <div class="mock-note">หน้านี้เป็น Mockup (HTML) — ข้อมูลเก็บในเบราว์เซอร์ · <a href="#" id="resetMock">รีเซ็ตข้อมูลตัวอย่าง</a></div>
       <header class="topbar"><div class="inner">
         <a class="brand" href="${ROOT}${isAdmin ? 'admin/dashboard.html' : 'index.html'}"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
-        <nav class="nav">${links.map(([k, href, label]) => `<a href="${ROOT}${href}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')}</nav>
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="เมนู" aria-expanded="false" aria-controls="mainNav"><span></span><span></span><span></span></button>
+        <nav class="nav" id="mainNav">${links.map(([k, href, label]) => `<a href="${ROOT}${href}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')}${u ? '<a href="#" class="nav-logout" id="navLogout">ออกจากระบบ</a>' : ''}</nav>
         ${right}
       </div></header>`;
     document.body.insertAdjacentHTML('afterbegin', html);
-    const lo = $('#logoutBtn');
-    if (lo) lo.addEventListener('click', (e) => { e.preventDefault(); logout(isAdmin ? ROOT + 'admin/login.html' : ROOT + 'login.html'); });
+    const header = $('header.topbar');
+    $('#menuBtn').addEventListener('click', () => {
+      const open = header.classList.toggle('open');
+      $('#menuBtn').setAttribute('aria-expanded', String(open));
+    });
+    $$('#logoutBtn, #navLogout').forEach((lo) => lo.addEventListener('click', (e) => { e.preventDefault(); logout(isAdmin ? ROOT + 'admin/login.html' : ROOT + 'login.html'); }));
     $('#resetMock').addEventListener('click', (e) => { e.preventDefault(); confirmBox('รีเซ็ตข้อมูลตัวอย่างทั้งหมด?', 'ข้อมูลการจองที่ทดลองทำไว้จะถูกล้าง และสร้างข้อมูลตัวอย่างใหม่', 'รีเซ็ต', reset); });
   }
 
   function downloadCSV(filename, rows) {
-    const csv = '﻿' + rows.map((r) => r.map((c) => `"${String(c == null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = filename;
-    a.click();
+    const csv = rows.map((r) => r.map((c) => `"${String(c == null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = filename;
+      a.click();
+    } catch (e) { /* download blocked */ }
+    exportCSVModal(filename, csv);
   }
+
+
+  /* ตารางบนมือถือ: ใส่ป้ายหัวคอลัมน์ให้แต่ละช่อง เพื่อแสดงเป็นการ์ดเรียงลงมา */
+  function labelTables() {
+    $$('table.table').forEach((t) => {
+      const heads = $$('thead th', t).map((th) => th.textContent.trim());
+      $$('tbody tr', t).forEach((tr) => Array.from(tr.children).forEach((td, i) => {
+        if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i] || '');
+      }));
+    });
+  }
+  let labelQueued = false;
+  new MutationObserver(() => {
+    if (labelQueued) return;
+    labelQueued = true;
+    requestAnimationFrame(() => { labelQueued = false; labelTables(); });
+  }).observe(document.documentElement, { childList: true, subtree: true });
 
   load();
 

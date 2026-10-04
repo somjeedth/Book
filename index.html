@@ -23,8 +23,12 @@
 
     <div class="side-layout">
       <!-- ตัวกรอง -->
-      <aside class="card">
-        <h2>ค้นหาห้องที่ว่าง</h2>
+      <aside class="card filter-card" id="filterCard">
+        <div class="filter-head">
+          <h2>ค้นหาห้องที่ว่าง</h2>
+          <button class="btn btn-outline btn-sm filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-controls="filterBody">แสดงตัวกรอง</button>
+        </div>
+        <div class="filter-body" id="filterBody">
         <p class="muted small" style="margin-top:0">กรองตามจำนวนคน สิ่งอำนวยความสะดวก และช่วงเวลาที่ต้องการ</p>
         <div class="field">
           <label for="fPeople">จำนวนผู้เข้าร่วม (คน)</label>
@@ -55,6 +59,7 @@
         <hr style="border:0;border-top:1px solid var(--gray-100);margin:18px 0">
         <h3>ผลการค้นหา</h3>
         <div id="results"></div>
+        </div>
       </aside>
 
       <!-- ปฏิทิน -->

@@ -16,6 +16,12 @@
     f: { people: '', date: M.today(), from: '', to: '', amenities: [], showClosed: true },
   };
 
+  $('#filterToggle').addEventListener('click', () => {
+    const open = $('#filterCard').classList.toggle('open');
+    $('#filterToggle').setAttribute('aria-expanded', String(open));
+    $('#filterToggle').textContent = open ? 'ซ่อนตัวกรอง' : 'แสดงตัวกรอง';
+  });
+
   $('#todayLabel').textContent = 'วันนี้ ' + M.fmtDateLong(M.today());
 
   /* ---------- ตัวกรอง ---------- */

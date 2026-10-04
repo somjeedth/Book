@@ -15,9 +15,9 @@
       <div style="display:flex;gap:8px"><a class="btn btn-outline" href="../index.html">ดูสถานะห้อง</a><a class="btn" href="bookings.html">รายการจองทั้งหมด</a></div>
     </div>
 
-    <section class="grid grid-4" id="kpis" style="margin-bottom:16px"></section>
+    <section class="grid grid-4 kpis" id="kpis" style="margin-bottom:16px"></section>
 
-    <section class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-bottom:16px" id="row1">
+    <section class="grid dash-row1" style="margin-bottom:16px" id="row1">
       <div class="card">
         <div class="card-head"><h2 style="margin:0">จำนวนการจองรายวัน</h2><div class="cal-nav" style="width:auto"><button class="icon-btn" id="mPrev" aria-label="เดือนก่อนหน้า">‹</button><b id="mTitle" style="min-width:120px;text-align:center"></b><button class="icon-btn" id="mNext" aria-label="เดือนถัดไป">›</button></div></div>
         <div class="vbars daily" id="daily"></div><div class="vbars-x daily" id="dailyX"></div>
@@ -48,7 +48,6 @@
       let admin;
       try { admin = M.requireAdmin(); } catch (e) { return; }
       M.renderTopbar('dashboard');
-      if (window.innerWidth < 900) { $('#row1').style.gridTemplateColumns = 'minmax(0, 1fr)'; }
 
       let chartMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       $('#mPrev').addEventListener('click', () => { chartMonth = new Date(chartMonth.getFullYear(), chartMonth.getMonth() - 1, 1); render(); });

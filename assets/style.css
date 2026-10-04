@@ -80,21 +80,6 @@ h3 { font-size: 1.05rem; }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .side-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 960px) {
-  .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .side-layout { grid-template-columns: minmax(0, 1fr) !important; }
-}
-@media (max-width: 640px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .topbar .inner { padding-top: 10px; padding-bottom: 8px; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
-  .nav { order: 3; flex: 0 0 100%; }
-  .user-chip .dept, .brand span:last-child { font-size: .95rem; }
-  .user-chip .dept { display: none; }
-  .row { flex-wrap: wrap; }
-  .row > * { flex: 1 1 140px; }
-  .cal-nav .title { min-width: 0; flex: 1; font-size: .9rem; }
-  .cal-nav { width: 100%; }
-}
 
 .card {
   background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
@@ -242,7 +227,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .vbars-x span { flex: 1; text-align: center; font-size: .75rem; color: var(--gray-600); }
 .vbars.daily, .vbars-x.daily { gap: 3px; }
 .vbars-x.daily span { font-size: .7rem; min-width: 0; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) { .vbars-x.daily span:nth-child(even) { visibility: hidden; } .vbars.daily .v { display: none; } }
 .donut { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center; }
 .donut .hole { width: 92px; height: 92px; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center; font-weight: 700; font-size: 1.3rem; line-height: 1.1; }
 
@@ -300,3 +284,136 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .email table { width: 100%; border-collapse: collapse; margin: 12px 0; }
 .email td { padding: 7px 0; border-bottom: 1px solid var(--gray-100); }
 .email td:first-child { color: var(--gray-600); width: 140px; }
+
+/* ---------- Page-specific layouts ---------- */
+.booking-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+.dash-row1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.menu-btn { display: none; }
+.nav .nav-logout { display: none; }
+.filter-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.filter-toggle { display: none; }
+.slot { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ================= Responsive =================
+   ≤1100  แท็บเล็ตแนวนอน   ≤900  แท็บเล็ตแนวตั้ง   ≤640  มือถือ */
+@media (max-width: 1100px) {
+  .side-layout { grid-template-columns: 260px minmax(0, 1fr); }
+}
+
+@media (max-width: 960px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .side-layout { grid-template-columns: minmax(0, 1fr) !important; }
+  .booking-layout, .dash-row1 { grid-template-columns: minmax(0, 1fr); }
+
+  /* ตัวกรองหน้าแรกพับเก็บได้ */
+  .filter-toggle { display: inline-flex; }
+  .filter-head h2 { margin: 0; }
+  .filter-body { display: none; margin-top: 14px; }
+  .filter-card.open .filter-body { display: block; }
+  .filter-body #fAmenities { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  /* เมนูแบบแฮมเบอร์เกอร์ */
+  .topbar .inner { flex-wrap: wrap; gap: 10px 12px; padding-top: 8px; padding-bottom: 8px; }
+  .brand { flex: 1; min-width: 0; }
+  .menu-btn {
+    display: inline-flex; flex-direction: column; justify-content: center; gap: 4px;
+    width: 42px; height: 42px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer;
+    background: rgba(255,255,255,.16); order: 3;
+  }
+  .menu-btn span { display: block; height: 2px; background: #fff; border-radius: 2px; transition: transform .2s, opacity .2s; }
+  .topbar.open .menu-btn span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .topbar.open .menu-btn span:nth-child(2) { opacity: 0; }
+  .topbar.open .menu-btn span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .user-chip { order: 2; }
+  .user-chip .logout { display: none; }
+  .nav .nav-logout { display: block; border-top: 1px solid rgba(255,255,255,.2); margin-top: 4px; padding-top: 12px; }
+  .nav {
+    display: none; order: 4; flex: 0 0 100%; flex-direction: column; gap: 2px;
+    border-top: 1px solid rgba(255,255,255,.2); padding: 8px 0 4px; overflow: visible;
+  }
+  .topbar.open .nav { display: flex; }
+  .nav a { padding: 11px 12px; font-size: 1rem; }
+}
+
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  .container { padding: 16px 16px 40px; }
+  h1 { font-size: 1.3rem; }
+  .card { padding: 16px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+  .grid-3 > :last-child:nth-child(odd) { grid-column: auto; }
+  .page-head { align-items: stretch; }
+  .page-head > .btn, .page-head > a.btn, .page-head > div:last-child:not(:first-child) { width: 100%; }
+  .page-head > div:last-child:not(:first-child) { display: flex; gap: 8px; }
+  .page-head > div:last-child:not(:first-child) > .btn { flex: 1; }
+  .brand > span:last-child { font-size: .95rem; }
+  .user-chip .who, .user-chip .dept { display: none; }
+  .brand > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .grid-4.kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpi-row .kpi, .grid-4.kpis .kpi { padding: 12px; }
+  .kpi .value { font-size: 1.5rem; }
+  .kpi .label { font-size: .78rem; }
+  .segmented button { padding: 6px 10px; font-size: .85rem; }
+
+  /* ป้องกัน iOS ซูมเวลาแตะช่องกรอก */
+  .input, select, textarea { font-size: 16px; }
+  .row { flex-wrap: wrap; }
+  .row > * { flex: 1 1 140px; }
+  .row-dt > :first-child { flex-basis: 100%; }
+  .filters .field { flex: 1 1 100%; }
+
+  .cal-toolbar { gap: 10px; }
+  .cal-toolbar .segmented { width: 100%; }
+  .cal-toolbar .segmented button { flex: 1; }
+  .cal-nav { width: 100%; }
+  .cal-nav .title { min-width: 0; flex: 1; font-size: .92rem; }
+  #weekRoom { width: 100% !important; }
+  .legend { gap: 6px 12px; font-size: .8rem; }
+
+  /* ปฏิทินรายเดือน: แสดงเป็นแถบสีแทนข้อความ */
+  .month .day { min-height: 58px; padding: 4px 3px; }
+  .month .num { width: 24px; height: 24px; font-size: .8rem; }
+  .month .bar { font-size: 0; height: 6px; padding: 0; margin-top: 3px; border-radius: 3px; }
+  .month .dow { font-size: .75rem; padding: 6px 2px; }
+
+  /* ตาราง → การ์ด */
+  .table-wrap { overflow: visible; }
+  .table thead { display: none; }
+  .table, .table tbody, .table tr { display: block; width: 100%; }
+  .table tr { border: 1px solid var(--gray-200); border-radius: 10px; padding: 6px 12px; margin-bottom: 10px; background: #fff; }
+  .table td { display: block; position: relative; border: 0; padding: 6px 0 6px 112px; min-height: 30px; }
+  .table td::before { content: attr(data-label); position: absolute; left: 0; top: 7px; width: 104px; color: var(--gray-600); font-size: .8rem; font-weight: 500; }
+  .table td[data-label=""] { padding-left: 0; }
+  .table td[data-label=""]::before { content: none; }
+  .table td[colspan] { padding-left: 0; text-align: center; }
+  .table td[colspan]::before { content: none; }
+  .table td.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--gray-100); margin-top: 4px; padding-top: 10px; }
+  .table td.actions::before { content: none; }
+  .table td.actions .btn { flex: 1 1 auto; }
+  .table tr:hover td { background: transparent; }
+
+  .kv { grid-template-columns: 104px minmax(0, 1fr); }
+  .modal { padding: 18px 16px; border-radius: 14px 14px 0 0; align-self: end; max-height: 92vh; }
+  .modal-bg { padding: 0; place-items: end stretch; }
+  .modal .foot { flex-wrap: wrap; }
+  .modal .foot .btn { flex: 1 1 auto; }
+
+  .hbar { grid-template-columns: 110px minmax(0, 1fr) 32px; }
+  .vbars-x.daily span:nth-child(even) { visibility: hidden; }
+  .vbars.daily .v { display: none; }
+  .email .eb { padding: 16px; }
+  .email td:first-child { width: 100px; }
+  .toast { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* อุปกรณ์สัมผัส: ปุ่มใหญ่ขึ้นให้กดง่าย */
+@media (pointer: coarse) {
+  .icon-btn { width: 42px; height: 42px; }
+  .btn-sm { padding: 8px 12px; }
+  .slot { min-height: 36px; }
+  .check input { width: 20px; height: 20px; }
+}
