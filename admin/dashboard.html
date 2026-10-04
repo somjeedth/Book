@@ -19,8 +19,9 @@
 
     <section class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-bottom:16px" id="row1">
       <div class="card">
-        <div class="card-head"><h2 style="margin:0">จำนวนการจองรายวัน</h2><span class="muted small">14 วันล่าสุด + 7 วันข้างหน้า</span></div>
-        <div class="vbars" id="daily"></div><div class="vbars-x" id="dailyX"></div>
+        <div class="card-head"><h2 style="margin:0">จำนวนการจองรายวัน</h2><div class="cal-nav" style="width:auto"><button class="icon-btn" id="mPrev" aria-label="เดือนก่อนหน้า">‹</button><b id="mTitle" style="min-width:120px;text-align:center"></b><button class="icon-btn" id="mNext" aria-label="เดือนถัดไป">›</button></div></div>
+        <div class="vbars daily" id="daily"></div><div class="vbars-x daily" id="dailyX"></div>
+        <div class="muted small" id="mSum" style="margin-top:8px"></div>
       </div>
       <div class="card">
         <div class="card-head"><h2 style="margin:0">สถานะการจองทั้งหมด</h2></div>
@@ -47,7 +48,11 @@
       let admin;
       try { admin = M.requireAdmin(); } catch (e) { return; }
       M.renderTopbar('dashboard');
-      if (window.innerWidth < 900) { $('#row1').style.gridTemplateColumns = '1fr'; }
+      if (window.innerWidth < 900) { $('#row1').style.gridTemplateColumns = 'minmax(0, 1fr)'; }
+
+      let chartMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      $('#mPrev').addEventListener('click', () => { chartMonth = new Date(chartMonth.getFullYear(), chartMonth.getMonth() - 1, 1); render(); });
+      $('#mNext').addEventListener('click', () => { chartMonth = new Date(chartMonth.getFullYear(), chartMonth.getMonth() + 1, 1); render(); });
 
       function render() {
         const D = M.data, td = M.today(), now = new Date();
@@ -74,19 +79,30 @@
           <div class="card kpi"><span class="label">อัตราการใช้ห้องประชุม 1</span><span class="value">${util}%</span><span class="delta muted">${Math.round(usedMin / 60)} ชม. จาก ${workdays * openMin / 60} ชม. (วันทำการ)</span></div>
           <a class="card kpi ${pending.length ? 'alert' : ''}" href="cancel-requests.html" style="color:inherit;text-decoration:none"><span class="label">คำขอยกเลิกรออนุมัติ</span><span class="value">${pending.length}</span><span class="delta muted">ยกเลิกแล้วเดือนนี้ ${cancelledMonth.length} รายการ</span></a>`;
 
-        // daily bars
-        const days = [...Array(21)].map((_, i) => M.addDays(now, i - 14));
+        // daily bars: วันที่ 1 – สิ้นเดือน ของเดือนที่เลือก
+        const mFirst = new Date(chartMonth.getFullYear(), chartMonth.getMonth(), 1);
+        const nDays = new Date(mFirst.getFullYear(), mFirst.getMonth() + 1, 0).getDate();
+        const days = [...Array(nDays)].map((_, i) => new Date(mFirst.getFullYear(), mFirst.getMonth(), i + 1));
         const counts = days.map((d) => active.filter((b) => b.date === M.iso(d)).length);
         const max = Math.max(1, ...counts);
-        $('#daily').innerHTML = days.map((d, i) => `<div class="col" title="${M.fmtDate(M.iso(d))}: ${counts[i]} รายการ"><span class="v">${counts[i] || ''}</span>
-          <div class="b" style="height:${(counts[i] / max) * 85}%;${M.iso(d) === td ? 'background:var(--green-700)' : M.iso(d) > td ? 'background:var(--green-100)' : ''}"></div></div>`).join('');
-        $('#dailyX').innerHTML = days.map((d, i) => `<span>${i % 2 === 0 || M.iso(d) === td ? d.getDate() : ''}</span>`).join('');
+        $('#mTitle').textContent = M.fmtMonth(mFirst);
+        $('#daily').innerHTML = days.map((d, i) => {
+          const ds = M.iso(d), wd = d.getDay();
+          const bg = ds === td ? 'background:var(--green-700)' : ds > td ? 'background:var(--green-100)' : '';
+          return `<div class="col" title="${M.fmtDate(ds)}: ${counts[i]} รายการ"><span class="v">${counts[i] || ''}</span><div class="b" style="height:${(counts[i] / max) * 85}%;${bg}"></div></div>`;
+        }).join('');
+        $('#dailyX').innerHTML = days.map((d) => {
+          const wd = d.getDay(), ds = M.iso(d);
+          return `<span style="${ds === td ? 'color:var(--green-700);font-weight:700' : wd === 0 || wd === 6 ? 'color:var(--gray-400)' : ''}">${d.getDate()}</span>`;
+        }).join('');
+        const total = counts.reduce((a, c) => a + c, 0);
+        $('#mSum').innerHTML = `รวม <b>${total}</b> รายการ · เฉลี่ย ${(total / nDays).toFixed(1)} รายการ/วัน · สีเข้ม = วันนี้, สีอ่อน = วันข้างหน้า, ตัวเลขสีเทา = เสาร์-อาทิตย์`;
 
         // donut
         const st = { confirmed: 0, cancel_requested: 0, cancelled: 0 };
         D.bookings.forEach((b) => st[b.status]++);
-        const total = D.bookings.length || 1;
-        const p1 = (st.confirmed / total) * 100, p2 = p1 + (st.cancel_requested / total) * 100;
+        const totalAll = D.bookings.length || 1;
+        const p1 = (st.confirmed / totalAll) * 100, p2 = p1 + (st.cancel_requested / totalAll) * 100;
         $('#donut').innerHTML = `<div class="donut" style="background:conic-gradient(var(--green) 0 ${p1}%, var(--amber) ${p1}% ${p2}%, var(--gray-400) ${p2}% 100%)"><div class="hole">${D.bookings.length}<span class="muted small" style="font-weight:400">รายการ</span></div></div>
           <div class="legend" style="flex-direction:column;gap:8px">
             <span><i style="background:var(--green)"></i>ยืนยันแล้ว ${st.confirmed}</span>
