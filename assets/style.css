@@ -314,7 +314,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .filter-body #fAmenities { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1240px) {
   /* เมนูแบบแฮมเบอร์เกอร์ */
   .topbar .inner { flex-wrap: wrap; gap: 10px 12px; padding-top: 8px; padding-bottom: 8px; }
   .brand { flex: 1; min-width: 0; }
@@ -417,3 +417,19 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .slot { min-height: 36px; }
   .check input { width: 20px; height: 20px; }
 }
+
+/* ---------- Permissions ---------- */
+.perm-table th { font-size: .78rem; }
+.perm-cell { text-align: center; }
+.perm-yes { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green-50); color: var(--green-700); font-weight: 700; }
+.perm-no { color: var(--gray-400); }
+.perm-list { display: grid; gap: 6px; }
+.perm-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; cursor: pointer; font-weight: 400; margin: 0; }
+.perm-item:has(input:checked) { border-color: var(--green); background: var(--green-50); }
+.perm-item input { accent-color: var(--green); width: 18px; height: 18px; margin-top: 2px; flex: none; }
+.perm-item > span { display: flex; flex-direction: column; }
+@media (max-width: 640px) {
+  .perm-table td.perm-cell { text-align: left; }
+}
+.user-chip .dept { display: none; }
+.nav a { padding: 6px 9px; }

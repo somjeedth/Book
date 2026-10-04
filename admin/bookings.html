@@ -35,7 +35,7 @@
     (function () {
       const M = MRB, { $, esc } = M;
       let admin;
-      try { admin = M.requireAdmin(); } catch (e) { return; }
+      try { admin = M.requireAdmin('bookings'); } catch (e) { return; }
       M.renderTopbar('bookings');
       $('#room').innerHTML += M.data.rooms.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
       $('#status').innerHTML += Object.entries(M.STATUS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');

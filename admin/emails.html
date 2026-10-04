@@ -30,7 +30,7 @@
   <script>
     (function () {
       const M = MRB, { $, esc } = M;
-      try { M.requireAdmin(); } catch (e) { return; }
+      try { M.requireAdmin('emails'); } catch (e) { return; }
       M.renderTopbar('emails');
       $('#kind').innerHTML += Object.entries(M.EMAIL_KIND).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
       function render() {

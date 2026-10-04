@@ -19,6 +19,17 @@
     cancelled: { label: 'ยกเลิกแล้ว', cls: 'pill-off' },
   };
   const ACTIVE_STATUSES = ['confirmed', 'cancel_requested'];
+  /** สิทธิ์ของผู้ดูแลระบบ (เปิด/ปิดแยกรายคนได้ที่หน้า "ผู้ดูแลและสิทธิ์") */
+  const PERMISSIONS = [
+    { key: 'dashboard', short: 'Dashboard', label: 'ดู Dashboard', desc: 'ดูภาพรวมสถิติการจอง', page: 'admin/dashboard.html' },
+    { key: 'bookings', short: 'รายการจอง', label: 'ดูและยกเลิกรายการจอง', desc: 'ค้นหา ดูรายละเอียด ยกเลิกการจอง และส่งออก CSV', page: 'admin/bookings.html' },
+    { key: 'approve', short: 'อนุมัติยกเลิก', label: 'อนุมัติ/ปฏิเสธคำขอยกเลิก', desc: 'พิจารณาคำขอยกเลิกจากผู้จอง', page: 'admin/cancel-requests.html' },
+    { key: 'rooms', short: 'จัดการห้อง', label: 'จัดการห้องประชุม', desc: 'แก้ไขข้อมูลห้อง และเปิด/ปิดการจอง', page: 'admin/rooms.html' },
+    { key: 'history', short: 'ประวัติ', label: 'ดูประวัติการจอง', desc: 'ดู audit log และส่งออก CSV', page: 'admin/history.html' },
+    { key: 'emails', short: 'อีเมล', label: 'ดูอีเมลแจ้งเตือน', desc: 'ดูอีเมลที่ระบบส่ง และสั่งส่งอีเมลเตือน', page: 'admin/emails.html' },
+    { key: 'users', short: 'จัดการสิทธิ์', label: 'จัดการผู้ดูแลและสิทธิ์', desc: 'เพิ่ม/แก้ไข/ระงับผู้ดูแลระบบ และกำหนดสิทธิ์', page: 'admin/users.html' },
+  ];
+  const ALL_PERMS = PERMISSIONS.map((p) => p.key);
 
   /* ---------------- date / time helpers ---------------- */
   const pad = (n) => String(n).padStart(2, '0');
@@ -70,13 +81,14 @@
         note: 'ห้องประชุมเล็ก (ยังไม่เปิดให้จอง)' },
     ];
     const users = [
-      { id: 1, role: 'admin', email: 'admin@company.co.th', password: 'admin1234', name: 'ผู้ดูแลระบบ', department: 'ฝ่ายบริหาร', phone: '02-000-0000' },
+      { id: 1, role: 'admin', email: 'admin@company.co.th', password: 'admin1234', name: 'ผู้ดูแลระบบ', department: 'ฝ่ายบริหาร', phone: '02-000-0000', perms: ALL_PERMS.slice() },
       { id: 2, role: 'user', email: 'somchai@company.co.th', password: '1234', name: 'สมชาย ใจดี', department: 'ฝ่ายการตลาด', phone: '081-234-5678' },
       { id: 3, role: 'user', email: 'suda@company.co.th', password: '1234', name: 'สุดา มีสุข', department: 'ฝ่ายบุคคล', phone: '089-111-2233' },
       { id: 4, role: 'user', email: 'anan@company.co.th', password: '1234', name: 'อนันต์ ศรีสวัสดิ์', department: 'ฝ่ายเทคโนโลยีสารสนเทศ', phone: '086-555-7788' },
       { id: 5, role: 'user', email: 'pim@company.co.th', password: '1234', name: 'พิมพ์ชนก แก้วมณี', department: 'ฝ่ายบัญชีและการเงิน', phone: '092-345-6789' },
       { id: 6, role: 'user', email: 'wichai@company.co.th', password: '1234', name: 'วิชัย ทองคำ', department: 'ฝ่ายขาย', phone: '084-987-6543' },
     ];
+    users.push({ id: 7, role: 'admin', email: 'staff@company.co.th', password: 'staff1234', name: 'กมลวรรณ ธุรการ', department: 'ฝ่ายบริหาร', phone: '02-000-0001', perms: ['dashboard', 'bookings', 'approve'] });
     const purposes = ['ประชุมทีมประจำสัปดาห์', 'นำเสนอแผนการตลาด Q4', 'สัมภาษณ์งานผู้สมัคร', 'ประชุมปิดงบประมาณ', 'อบรมระบบใหม่', 'ประชุมลูกค้า (Online)', 'Workshop ออกแบบผลิตภัณฑ์', 'ประชุมผู้บริหาร', 'ติดตามความคืบหน้าโปรเจกต์', 'ประชุมคณะกรรมการสวัสดิการ'];
     const templates = [['09:00', '10:30'], ['10:30', '12:00'], ['13:00', '14:00'], ['14:00', '15:30'], ['15:30', '17:00'], ['09:30', '11:00'], ['13:30', '15:00']];
 
@@ -97,7 +109,8 @@
         const tpl = templates[Math.floor(r() * templates.length)];
         if (used.some(([s, e]) => toMin(s) < toMin(tpl[1]) && toMin(e) > toMin(tpl[0]))) continue;
         used.push(tpl);
-        const u = users[1 + Math.floor(r() * (users.length - 1))];
+        const bookers = users.filter((x) => x.role === 'user');
+        const u = bookers[Math.floor(r() * bookers.length)];
         pushSeedBooking(data, {
           roomId: 1, user: u, date: ds, start: tpl[0], end: tpl[1],
           purpose: purposes[Math.floor(r() * purposes.length)],
@@ -158,6 +171,12 @@
   function load() {
     try { DATA = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { DATA = null; }
     if (!DATA || !DATA.rooms) { DATA = seed(); save(); }
+    // ข้อมูลเก่าที่ยังไม่มีสิทธิ์: ให้แอดมินเดิมได้สิทธิ์ทั้งหมด
+    DATA.users.forEach((u) => { if (u.role === 'admin' && !u.perms) u.perms = ALL_PERMS.slice(); });
+    if (!DATA.users.some((u) => u.email === 'staff@company.co.th')) {
+      DATA.users.push({ id: Math.max(...DATA.users.map((x) => x.id)) + 1, role: 'admin', email: 'staff@company.co.th', password: 'staff1234', name: 'กมลวรรณ ธุรการ', department: 'ฝ่ายบริหาร', phone: '02-000-0001', perms: ['dashboard', 'bookings', 'approve'] });
+      save();
+    }
     return DATA;
   }
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ } }
@@ -174,6 +193,9 @@
     admin_cancelled: 'แอดมินยกเลิกการจอง',
     reminder_sent: 'ส่งอีเมลเตือนล่วงหน้า 1 วัน',
     room_updated: 'แก้ไขข้อมูลห้อง',
+    admin_added: 'เพิ่มผู้ดูแลระบบ',
+    admin_updated: 'แก้ไขผู้ดูแล/สิทธิ์',
+    admin_removed: 'ถอนสิทธิ์ผู้ดูแล',
   };
   function addLog(data, b, action, actor, detail, ts) {
     data.logs.push({
@@ -208,6 +230,7 @@
   function login(email, password, role) {
     const u = DATA.users.find((x) => x.email.toLowerCase() === String(email).trim().toLowerCase() && x.password === password);
     if (!u) return { ok: false, error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
+    if (u.disabled) return { ok: false, error: 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ' };
     if (role === 'admin' && u.role !== 'admin') return { ok: false, error: 'บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ' };
     storeSet(SESSION_KEY, JSON.stringify({ userId: u.id }));
     return { ok: true, user: u };
@@ -225,11 +248,78 @@
     if (!u) { location.href = ROOT + 'login.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search); throw new Error('redirect'); }
     return u;
   }
-  function requireAdmin() {
+  const can = (u, perm) => !!u && u.role === 'admin' && !u.disabled && (u.perms || []).includes(perm);
+  /** หน้าแรกที่แอดมินคนนี้มีสิทธิ์เข้า */
+  function adminHome(u) {
+    const p = PERMISSIONS.find((x) => can(u, x.key));
+    return ROOT + (p ? p.page : 'index.html');
+  }
+  function requireAdmin(perm) {
     const u = currentUser();
-    if (!u || u.role !== 'admin') { location.href = ROOT + 'admin/login.html'; throw new Error('redirect'); }
+    if (!u || u.role !== 'admin' || u.disabled) { location.href = ROOT + 'admin/login.html'; throw new Error('redirect'); }
+    if (perm && !can(u, perm)) {
+      renderTopbar('');
+      const main = document.querySelector('main');
+      if (main) main.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto;text-align:center">
+        <h2>ไม่มีสิทธิ์เข้าถึงหน้านี้</h2>
+        <p class="muted">บัญชีของคุณยังไม่ได้รับสิทธิ์ “${esc((PERMISSIONS.find((x) => x.key === perm) || {}).label || perm)}” กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์</p>
+        <a class="btn" href="${adminHome(u)}">กลับหน้าหลัก</a></div>`;
+      throw new Error('forbidden');
+    }
     return u;
   }
+
+  /* ---------------- จัดการผู้ดูแลระบบ ---------------- */
+  function saveAdmin(o, actor) {
+    const email = String(o.email || '').trim().toLowerCase();
+    if (!o.name || !o.name.trim()) return { ok: false, error: 'กรุณากรอกชื่อ-นามสกุล' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' };
+    if (!o.perms || !o.perms.length) return { ok: false, error: 'กรุณาเลือกสิทธิ์อย่างน้อย 1 รายการ' };
+    const other = DATA.users.find((u) => u.email.toLowerCase() === email && u.id !== o.id);
+    if (o.id) {
+      const u = DATA.users.find((x) => x.id === o.id);
+      if (other) return { ok: false, error: 'อีเมลนี้ถูกใช้งานแล้ว' };
+      if (u.perms.includes('users') && !o.perms.includes('users') && countUserManagers() <= 1) return { ok: false, error: 'ต้องมีผู้ดูแลที่มีสิทธิ์ “จัดการผู้ดูแลและสิทธิ์” อย่างน้อย 1 คน' };
+      Object.assign(u, { name: o.name.trim(), email, department: o.department, phone: o.phone, perms: o.perms.slice() });
+      if (o.password) u.password = o.password;
+      addLog(DATA, null, 'admin_updated', actor, `แก้ไขสิทธิ์ ${u.name} (${u.email}): ${permLabels(u.perms)}`);
+      save(); return { ok: true, user: u };
+    }
+    if (other && other.role === 'admin') return { ok: false, error: 'อีเมลนี้เป็นผู้ดูแลระบบอยู่แล้ว' };
+    if (other) {
+      // เลื่อนผู้ใช้ที่มีอยู่ให้เป็นแอดมิน
+      Object.assign(other, { role: 'admin', perms: o.perms.slice(), disabled: false });
+      if (o.password) other.password = o.password;
+      addLog(DATA, null, 'admin_added', actor, `เพิ่มสิทธิ์แอดมินให้ผู้ใช้เดิม ${other.name} (${other.email}): ${permLabels(other.perms)}`);
+      save(); return { ok: true, user: other, promoted: true };
+    }
+    if (!o.password || o.password.length < 6) return { ok: false, error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' };
+    const u = { id: Math.max(...DATA.users.map((x) => x.id)) + 1, role: 'admin', email, password: o.password, name: o.name.trim(),
+      department: o.department || '', phone: o.phone || '', perms: o.perms.slice(), createdAt: Date.now(), createdBy: actor.name };
+    DATA.users.push(u);
+    addLog(DATA, null, 'admin_added', actor, `เพิ่มผู้ดูแล ${u.name} (${u.email}): ${permLabels(u.perms)}`);
+    save(); return { ok: true, user: u };
+  }
+  function countUserManagers(exceptId) {
+    return DATA.users.filter((u) => u.role === 'admin' && !u.disabled && u.id !== exceptId && (u.perms || []).includes('users')).length;
+  }
+  function setAdminDisabled(id, disabled, actor) {
+    const u = DATA.users.find((x) => x.id === id);
+    if (u.id === actor.id) return { ok: false, error: 'ไม่สามารถระงับบัญชีของตัวเองได้' };
+    if (disabled && u.perms.includes('users') && countUserManagers(u.id) < 1) return { ok: false, error: 'ต้องมีผู้ดูแลที่จัดการสิทธิ์ได้อย่างน้อย 1 คน' };
+    u.disabled = disabled;
+    addLog(DATA, null, 'admin_updated', actor, `${disabled ? 'ระงับ' : 'เปิดใช้งาน'}บัญชีผู้ดูแล ${u.name} (${u.email})`);
+    save(); return { ok: true };
+  }
+  function removeAdmin(id, actor) {
+    const u = DATA.users.find((x) => x.id === id);
+    if (u.id === actor.id) return { ok: false, error: 'ไม่สามารถถอนสิทธิ์ของตัวเองได้' };
+    if (u.perms.includes('users') && countUserManagers(u.id) < 1) return { ok: false, error: 'ต้องมีผู้ดูแลที่จัดการสิทธิ์ได้อย่างน้อย 1 คน' };
+    u.role = 'user'; u.perms = []; u.disabled = false;
+    addLog(DATA, null, 'admin_removed', actor, `ถอนสิทธิ์แอดมินของ ${u.name} (${u.email}) — บัญชียังใช้จองห้องได้`);
+    save(); return { ok: true };
+  }
+  const permLabels = (perms) => PERMISSIONS.filter((p) => perms.includes(p.key)).map((p) => p.label).join(', ');
 
   /* ---------------- booking logic ---------------- */
   const room = (id) => DATA.rooms.find((r) => r.id === Number(id));
@@ -457,14 +547,15 @@
     const pending = DATA.bookings.filter((b) => b.status === 'cancel_requested').length;
     const links = isAdmin
       ? [
-          ['dashboard', 'admin/dashboard.html', 'Dashboard'],
+          ['dashboard', 'admin/dashboard.html', 'Dashboard', 'dashboard'],
           ['status', 'index.html', 'สถานะห้อง'],
-          ['bookings', 'admin/bookings.html', 'รายการจอง'],
-          ['requests', 'admin/cancel-requests.html', `คำขอยกเลิก${pending ? ` <span class="badge-admin" style="background:#fff;color:var(--red)">${pending}</span>` : ''}`],
-          ['rooms', 'admin/rooms.html', 'จัดการห้อง'],
-          ['history', 'admin/history.html', 'ประวัติ'],
-          ['emails', 'admin/emails.html', 'อีเมล'],
-        ]
+          ['bookings', 'admin/bookings.html', 'รายการจอง', 'bookings'],
+          ['requests', 'admin/cancel-requests.html', `คำขอยกเลิก${pending ? ` <span class="badge-admin" style="background:#fff;color:var(--red)">${pending}</span>` : ''}`, 'approve'],
+          ['rooms', 'admin/rooms.html', 'จัดการห้อง', 'rooms'],
+          ['history', 'admin/history.html', 'ประวัติ', 'history'],
+          ['emails', 'admin/emails.html', 'อีเมล', 'emails'],
+          ['users', 'admin/users.html', 'สิทธิ์ผู้ดูแล', 'users'],
+        ].filter((l) => !l[3] || can(u, l[3]))
       : [
           ['status', 'index.html', 'สถานะห้อง'],
           ['book', 'booking.html', 'จองห้องประชุม'],
@@ -480,7 +571,7 @@
     const html = `
       <div class="mock-note">หน้านี้เป็น Mockup (HTML) — ข้อมูลเก็บในเบราว์เซอร์ · <a href="#" id="resetMock">รีเซ็ตข้อมูลตัวอย่าง</a></div>
       <header class="topbar"><div class="inner">
-        <a class="brand" href="${ROOT}${isAdmin ? 'admin/dashboard.html' : 'index.html'}"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
+        <a class="brand" href="${isAdmin ? adminHome(u) : ROOT + 'index.html'}"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
         <button class="menu-btn" id="menuBtn" type="button" aria-label="เมนู" aria-expanded="false" aria-controls="mainNav"><span></span><span></span><span></span></button>
         <nav class="nav" id="mainNav">${links.map(([k, href, label]) => `<a href="${ROOT}${href}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')}${u ? '<a href="#" class="nav-logout" id="navLogout">ออกจากระบบ</a>' : ''}</nav>
         ${right}
@@ -530,6 +621,7 @@
     get data() { return DATA; }, save, reset,
     pad, iso, parseISO, addDays, toMin, fromMin, today, nowMin, startOfWeek, slots, timeOptions,
     fmtDate, fmtDateLong, fmtMonth, fmtDow, fmtDateTime,
+    PERMISSIONS, ALL_PERMS, can, adminHome, saveAdmin, setAdminDisabled, removeAdmin, permLabels,
     currentUser, login, register, logout, requireUser, requireAdmin,
     room, activeBookings, bookingsOn, findConflicts, validateBooking, createBooking,
     requestCancel, approveCancel, rejectCancel, adminCancel, runReminders, updateRoom,

@@ -33,8 +33,11 @@
           <div class="field"><label for="pass">รหัสผ่าน</label><input class="input" type="password" id="pass" autocomplete="current-password"></div>
           <button class="btn btn-block" type="submit">เข้าสู่ระบบแอดมิน</button>
         </form>
-        <div class="alert alert-warn small" style="margin-top:16px">บัญชีทดลอง: <b>admin@company.co.th</b> / <b>admin1234</b>
-          <button type="button" class="btn btn-sm btn-ghost" id="fillDemo" style="margin-left:6px">กรอกให้</button></div>
+        <div class="alert alert-warn small" style="margin-top:16px">
+          บัญชีทดลอง (สิทธิ์ทั้งหมด): <b>admin@company.co.th</b> / <b>admin1234</b>
+          <button type="button" class="btn btn-sm btn-ghost" id="fillDemo" style="margin-left:6px">กรอกให้</button><br>
+          บัญชีทดลอง (สิทธิ์จำกัด): <b>staff@company.co.th</b> / <b>staff1234</b>
+          <button type="button" class="btn btn-sm btn-ghost" id="fillStaff" style="margin-left:6px;margin-top:4px">กรอกให้</button></div>
         <div class="switch-link"><a href="../login.html">← เข้าสู่ระบบสำหรับผู้จอง</a></div>
       </div>
     </section>
@@ -44,11 +47,12 @@
     (function () {
       const M = MRB, { $ } = M;
       $('#fillDemo').addEventListener('click', () => { $('#email').value = 'admin@company.co.th'; $('#pass').value = 'admin1234'; });
+      $('#fillStaff').addEventListener('click', () => { $('#email').value = 'staff@company.co.th'; $('#pass').value = 'staff1234'; });
       $('#f').addEventListener('submit', (e) => {
         e.preventDefault();
         const r = M.login($('#email').value, $('#pass').value, 'admin');
         if (!r.ok) { $('#err').textContent = r.error; $('#err').classList.remove('hidden'); return; }
-        location.href = 'dashboard.html';
+        location.href = M.adminHome(r.user);
       });
     })();
   </script>

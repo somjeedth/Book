@@ -32,10 +32,10 @@
   <script>
     (function () {
       const M = MRB, { $, esc } = M;
-      try { M.requireAdmin(); } catch (e) { return; }
+      try { M.requireAdmin('history'); } catch (e) { return; }
       M.renderTopbar('history');
       $('#action').innerHTML += Object.entries(M.LOG_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-      const pillCls = { created: 'pill-free', cancel_requested: 'pill-warn', cancel_rejected: 'pill-warn', cancel_approved: 'pill-busy', admin_cancelled: 'pill-busy', reminder_sent: 'pill-off', room_updated: 'pill-off' };
+      const pillCls = { created: 'pill-free', cancel_requested: 'pill-warn', cancel_rejected: 'pill-warn', cancel_approved: 'pill-busy', admin_cancelled: 'pill-busy', reminder_sent: 'pill-off', room_updated: 'pill-off', admin_added: 'pill-free', admin_updated: 'pill-warn', admin_removed: 'pill-busy' };
       const roleTxt = { admin: 'แอดมิน', user: 'ผู้จอง', system: 'ระบบอัตโนมัติ' };
       function filtered() {
         const q = $('#q').value.trim().toLowerCase(), a = $('#action').value, f = $('#from').value, t = $('#to').value;

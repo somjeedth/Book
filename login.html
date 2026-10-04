@@ -75,7 +75,7 @@
         e.preventDefault();
         const r = M.login($('#lEmail').value, $('#lPass').value, 'user');
         if (!r.ok) return showErr(r.error);
-        location.href = r.user.role === 'admin' ? 'admin/dashboard.html' : next;
+        location.href = r.user.role === 'admin' ? M.adminHome(r.user) : next;
       });
       $('#regForm').addEventListener('submit', (e) => {
         e.preventDefault();

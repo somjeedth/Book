@@ -20,7 +20,7 @@
     (function () {
       const M = MRB, { $, $$, esc } = M;
       let admin;
-      try { admin = M.requireAdmin(); } catch (e) { return; }
+      try { admin = M.requireAdmin('rooms'); } catch (e) { return; }
       M.renderTopbar('rooms');
       function render() {
         const td = M.today();

@@ -46,7 +46,7 @@
     (function () {
       const M = MRB, { $, esc } = M;
       let admin;
-      try { admin = M.requireAdmin(); } catch (e) { return; }
+      try { admin = M.requireAdmin('dashboard'); } catch (e) { return; }
       M.renderTopbar('dashboard');
 
       let chartMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -146,7 +146,7 @@
             <div style="display:flex;justify-content:space-between;gap:8px"><b>${b.code}</b><span class="muted small">${M.fmtDate(b.date)} ${b.start}–${b.end}</span></div>
             <div class="small">${esc(b.name)} · ${esc(b.department)}</div>
             <div class="small muted">เหตุผล: ${esc(b.cancelReason)}</div>
-            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-sm" data-approve="${b.id}">อนุมัติยกเลิก</button><button class="btn btn-sm btn-ghost" data-reject="${b.id}">ปฏิเสธ</button></div>
+            ${M.can(admin, 'approve') ? `<div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-sm" data-approve="${b.id}">อนุมัติยกเลิก</button><button class="btn btn-sm btn-ghost" data-reject="${b.id}">ปฏิเสธ</button></div>` : ''}
           </div>`).join('') : '<p class="muted">ไม่มีคำขอที่รออนุมัติ</p>';
 
         // activity

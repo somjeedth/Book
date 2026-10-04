@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ผู้ดูแลและสิทธิ์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>ผู้ดูแลระบบและสิทธิ์</h1><div class="muted">เพิ่มแอดมิน และกำหนดว่าแต่ละคนเข้าถึงส่วนไหนของระบบได้บ้าง</div></div>
+      <button class="btn" id="addBtn">+ เพิ่มผู้ดูแลระบบ</button>
+    </div>
+    <section class="grid grid-3 kpi-row" style="margin-bottom:16px" id="kpis"></section>
+    <section class="card">
+      <div class="filters">
+        <div class="field" style="flex:2"><label for="q">ค้นหา</label><input class="input" id="q" placeholder="ชื่อ / อีเมล / แผนก"></div>
+        <div class="field"><label for="st">สถานะ</label><select id="st"><option value="">ทั้งหมด</option><option value="active">ใช้งานอยู่</option><option value="disabled">ระงับการใช้งาน</option></select></div>
+      </div>
+      <div class="table-wrap"><table class="table perm-table">
+        <thead id="head"></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <p class="muted small" style="margin:12px 0 0">✓ = มีสิทธิ์ · ผู้ดูแลที่ถูกระงับจะเข้าสู่ระบบไม่ได้ · การถอนสิทธิ์แอดมินจะทำให้บัญชีกลับเป็นผู้จองทั่วไป (ยังจองห้องได้)</p>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, $$, esc } = M;
+      let me;
+      try { me = M.requireAdmin('users'); } catch (e) { return; }
+      M.renderTopbar('users');
+      const P = M.PERMISSIONS;
+      const PRESETS = [
+        ['สิทธิ์ทั้งหมด', M.ALL_PERMS],
+        ['ผู้อนุมัติ', ['dashboard', 'bookings', 'approve']],
+        ['ดูข้อมูลอย่างเดียว', ['dashboard', 'history']],
+      ];
+      $('#head').innerHTML = `<tr><th>ผู้ดูแล</th>${P.map((p) => `<th style="text-align:center" title="${esc(p.label)}">${esc(p.short)}</th>`).join('')}<th>สถานะ</th><th></th></tr>`;
+
+      const admins = () => M.data.users.filter((u) => u.role === 'admin');
+      function render() {
+        const all = admins();
+        $('#kpis').innerHTML = `
+          <div class="card kpi"><span class="label">ผู้ดูแลทั้งหมด</span><span class="value">${all.length}</span></div>
+          <div class="card kpi"><span class="label">ใช้งานอยู่</span><span class="value" style="color:var(--green-700)">${all.filter((u) => !u.disabled).length}</span></div>
+          <div class="card kpi"><span class="label">สิทธิ์ทั้งหมด</span><span class="value">${all.filter((u) => !u.disabled && M.ALL_PERMS.every((k) => u.perms.includes(k))).length}</span></div>`;
+        const q = $('#q').value.trim().toLowerCase(), st = $('#st').value;
+        const list = all.filter((u) => (!q || [u.name, u.email, u.department].join(' ').toLowerCase().includes(q)) &&
+          (!st || (st === 'disabled') === !!u.disabled));
+        $('#rows').innerHTML = list.map((u) => `
+          <tr style="${u.disabled ? 'opacity:.6' : ''}">
+            <td><b>${esc(u.name)}</b>${u.id === me.id ? ' <span class="pill pill-free pill-plain">คุณ</span>' : ''}<div class="muted small">${esc(u.email)}</div><div class="muted small">${esc(u.department || '-')}</div></td>
+            ${P.map((p) => `<td class="perm-cell">${u.perms.includes(p.key) ? '<span class="perm-yes" aria-label="มีสิทธิ์">✓</span>' : '<span class="perm-no" aria-label="ไม่มีสิทธิ์">–</span>'}</td>`).join('')}
+            <td>${u.disabled ? '<span class="pill pill-off">ระงับ</span>' : '<span class="pill pill-free">ใช้งานอยู่</span>'}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-outline" data-edit="${u.id}">แก้ไขสิทธิ์</button>
+              ${u.id !== me.id ? `<button class="btn btn-sm btn-ghost" data-toggle="${u.id}">${u.disabled ? 'เปิดใช้งาน' : 'ระงับ'}</button>
+              <button class="btn btn-sm btn-danger" data-remove="${u.id}">ถอนสิทธิ์</button>` : ''}
+            </td>
+          </tr>`).join('') || `<tr><td colspan="${P.length + 3}" class="muted" style="text-align:center;padding:30px">ไม่พบผู้ดูแล</td></tr>`;
+      }
+
+      function openForm(u) {
+        const isEdit = !!u;
+        const perms = u ? u.perms : ['dashboard', 'bookings', 'approve'];
+        M.modal(`
+          <h2>${isEdit ? 'แก้ไขผู้ดูแล: ' + esc(u.name) : 'เพิ่มผู้ดูแลระบบ'}</h2>
+          ${isEdit ? '' : '<p class="muted small" style="margin-top:0">ถ้าอีเมลนี้เป็นผู้จองที่มีบัญชีอยู่แล้ว ระบบจะเพิ่มสิทธิ์แอดมินให้บัญชีเดิม</p>'}
+          <div id="formErr" class="alert alert-err hidden"></div>
+          <div class="row">
+            <div class="field"><label for="aName">ชื่อ-นามสกุล <span class="req">*</span></label><input class="input" id="aName" value="${esc(u ? u.name : '')}"></div>
+            <div class="field"><label for="aDept">แผนก</label><input class="input" id="aDept" list="aDeptList" value="${esc(u ? u.department : '')}"><datalist id="aDeptList">${M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('')}</datalist></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="aEmail">อีเมล <span class="req">*</span></label><input class="input" type="email" id="aEmail" value="${esc(u ? u.email : '')}"></div>
+            <div class="field"><label for="aPhone">เบอร์โทรศัพท์</label><input class="input" id="aPhone" value="${esc(u ? u.phone : '')}"></div>
+          </div>
+          <div class="field"><label for="aPass">รหัสผ่าน ${isEdit ? '' : '<span class="req">*</span>'}</label><input class="input" type="password" id="aPass" autocomplete="new-password" placeholder="${isEdit ? 'เว้นว่างถ้าไม่ต้องการเปลี่ยน' : 'อย่างน้อย 6 ตัวอักษร'}"></div>
+          <div class="field">
+            <label>สิทธิ์การใช้งาน <span class="req">*</span></label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${PRESETS.map(([n], i) => `<button type="button" class="btn btn-sm btn-ghost" data-preset="${i}">${n}</button>`).join('')}</div>
+            <div class="perm-list">${P.map((p) => `
+              <label class="perm-item" for="perm_${p.key}">
+                <input type="checkbox" id="perm_${p.key}" value="${p.key}" ${perms.includes(p.key) ? 'checked' : ''}>
+                <span><b>${esc(p.label)}</b><span class="muted small">${esc(p.desc)}</span></span>
+              </label>`).join('')}</div>
+          </div>
+          <div class="foot"><button class="btn btn-ghost" data-close>ยกเลิก</button><button class="btn" id="aSave">${isEdit ? 'บันทึก' : 'เพิ่มผู้ดูแล'}</button></div>`,
+          (el, close) => {
+            el.style.maxWidth = '600px';
+            el.addEventListener('click', (e) => {
+              const b = e.target.closest('[data-preset]'); if (!b) return;
+              const keys = PRESETS[Number(b.dataset.preset)][1];
+              $$('.perm-list input', el).forEach((i) => (i.checked = keys.includes(i.value)));
+            });
+            el.querySelector('#aSave').addEventListener('click', () => {
+              const res = M.saveAdmin({
+                id: u ? u.id : null, name: $('#aName', el).value, email: $('#aEmail', el).value, department: $('#aDept', el).value.trim(),
+                phone: $('#aPhone', el).value.trim(), password: $('#aPass', el).value,
+                perms: $$('.perm-list input:checked', el).map((i) => i.value),
+              }, me);
+              if (!res.ok) { const er = $('#formErr', el); er.textContent = res.error; er.classList.remove('hidden'); return; }
+              close(); M.renderTopbar('users'); render();
+              M.toast(isEdit ? 'บันทึกสิทธิ์แล้ว' : res.promoted ? `เพิ่มสิทธิ์แอดมินให้ ${res.user.name} แล้ว` : `เพิ่มผู้ดูแล ${res.user.name} แล้ว`);
+            });
+          });
+      }
+
+      $('#addBtn').addEventListener('click', () => openForm(null));
+      ['#q', '#st'].forEach((s) => $(s).addEventListener('input', render));
+      $('#rows').addEventListener('click', (e) => {
+        const ed = e.target.closest('[data-edit]'), tg = e.target.closest('[data-toggle]'), rm = e.target.closest('[data-remove]');
+        const find = (el, k) => M.data.users.find((x) => x.id === Number(el.dataset[k]));
+        if (ed) openForm(find(ed, 'edit'));
+        if (tg) {
+          const u = find(tg, 'toggle');
+          M.confirmBox(`${u.disabled ? 'เปิดใช้งาน' : 'ระงับ'}บัญชี ${u.name}?`, u.disabled ? 'ผู้ดูแลคนนี้จะเข้าสู่ระบบได้อีกครั้ง' : 'ผู้ดูแลคนนี้จะเข้าสู่ระบบไม่ได้จนกว่าจะเปิดใช้งาน', u.disabled ? 'เปิดใช้งาน' : 'ระงับ', () => {
+            const r = M.setAdminDisabled(u.id, !u.disabled, me);
+            if (!r.ok) return M.toast(r.error, 'err');
+            render(); M.toast(u.disabled ? 'ระงับบัญชีแล้ว' : 'เปิดใช้งานแล้ว');
+          });
+        }
+        if (rm) {
+          const u = find(rm, 'remove');
+          M.confirmBox(`ถอนสิทธิ์แอดมินของ ${u.name}?`, 'บัญชีจะกลับเป็นผู้จองทั่วไป และเข้าหน้าแอดมินไม่ได้', 'ถอนสิทธิ์', () => {
+            const r = M.removeAdmin(u.id, me);
+            if (!r.ok) return M.toast(r.error, 'err');
+            render(); M.toast('ถอนสิทธิ์แล้ว');
+          });
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

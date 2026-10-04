@@ -33,7 +33,7 @@
     (function () {
       const M = MRB, { $, esc } = M;
       let admin;
-      try { admin = M.requireAdmin(); } catch (e) { return; }
+      try { admin = M.requireAdmin('approve'); } catch (e) { return; }
       M.renderTopbar('requests');
       function render() {
         const p = M.data.bookings.filter((b) => b.status === 'cancel_requested').sort((a, b) => a.cancelRequestedAt - b.cancelRequestedAt);
