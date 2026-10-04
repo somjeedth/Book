@@ -6,7 +6,9 @@
   M.renderTopbar('status');
 
   const user = M.currentUser();
-  const canSeeDetail = !!user;
+  // ผู้จองทั่วไปเห็นแค่ "ไม่ว่าง" (ไม่เปิดเผยชื่อ/แผนกของผู้อื่น) — แอดมินเห็นรายละเอียดทั้งหมด
+  const isAdmin = !!user && user.role === 'admin';
+  const isMine = (b) => !!user && b.userId === user.id;
   const state = {
     view: M.qs('view') || 'day',
     date: M.parseISO(M.qs('date') || M.today()),
@@ -95,7 +97,7 @@
       const next = todays.find((b) => M.toMin(b.start) > now);
       let cls = '', nowTxt, sub;
       if (!r.open) { cls = 'off'; nowTxt = 'ยังไม่เปิดให้จอง'; sub = 'จะเปิดให้จองเร็ว ๆ นี้'; }
-      else if (cur) { cls = 'busy'; nowTxt = 'ไม่ว่าง'; sub = `กำลังใช้งาน ${cur.start}–${cur.end} น.${canSeeDetail ? ' · ' + esc(cur.department) : ''}`; }
+      else if (cur) { cls = 'busy'; nowTxt = 'ไม่ว่าง'; sub = `ไม่ว่าง ${cur.start}–${cur.end} น.${isAdmin ? ' · ' + esc(cur.department) : isMine(cur) ? ' · การจองของคุณ' : ''}`; }
       else { nowTxt = 'ว่าง'; sub = next ? `ว่างถึง ${next.start} น.` : 'ว่างตลอดช่วงที่เหลือของวันนี้'; }
       const dim = roomMatches(r) ? '' : ' dim';
       return `<div class="card room-card ${cls}${dim}">
@@ -119,7 +121,7 @@
     if (bk) {
       const isStart = bk.start === t || (M.toMin(bk.start) < M.toMin(M.OPEN_TIME) && t === M.OPEN_TIME);
       const mine = user && bk.userId === user.id;
-      const label = isStart ? `${bk.start}-${bk.end} ${canSeeDetail ? esc(bk.department) : 'ไม่ว่าง'}` : '';
+      const label = isStart ? `${bk.start}-${bk.end} ${isAdmin ? esc(bk.department) : mine ? 'การจองของคุณ' : 'ไม่ว่าง'}` : '';
       return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}" title="${bk.start}-${bk.end} ไม่ว่าง">${label}</div>`;
     }
     if (isPast) return `<div class="slot off past"></div>`;
@@ -215,14 +217,12 @@
     const busy = e.target.closest('.slot[data-bid]');
     if (busy) {
       const b = M.data.bookings.find((x) => x.id === Number(busy.dataset.bid));
-      if (!canSeeDetail) {
-        M.modal(`<h2>ไม่ว่าง</h2><p>${esc(M.room(b.roomId).name)} · ${M.fmtDateLong(b.date)}<br>เวลา ${b.start} – ${b.end} น.</p>
-          <p class="muted small">เข้าสู่ระบบเพื่อดูรายละเอียดผู้จอง</p><div class="foot"><a class="btn" href="login.html">เข้าสู่ระบบ</a><button class="btn btn-ghost" data-close>ปิด</button></div>`);
-      } else if (user.role === 'admin' || b.userId === user.id) {
+      if (isAdmin || isMine(b)) {
         M.modal(M.bookingDetailHTML(b));
       } else {
         M.modal(`<h2>ไม่ว่าง</h2><dl class="kv"><dt>ห้อง</dt><dd>${esc(M.room(b.roomId).name)}</dd><dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
-          <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd><dt>ผู้จอง</dt><dd>${esc(b.name)}</dd><dt>แผนก</dt><dd>${esc(b.department)}</dd></dl>
+          <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd></dl>
+          <p class="muted small">ช่วงเวลานี้มีการจองแล้ว กรุณาเลือกเวลาอื่น</p>
           <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button></div>`);
       }
     }
