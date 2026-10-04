@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>กล่องอีเมล</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>กล่องอีเมล (จำลอง)</h1><div class="muted">ตัวอย่างอีเมลที่ระบบส่งถึงผู้จอง: ยืนยันการจอง · แจ้งเตือนล่วงหน้า 1 วัน · แจ้งการยกเลิก</div></div>
+    </div>
+    <div class="side-layout" style="grid-template-columns:340px minmax(0,1fr)">
+      <aside class="card" style="padding:0;overflow:hidden"><div id="list"></div></aside>
+      <section id="preview"></section>
+    </div>
+  </main>
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      const user = M.currentUser();
+      M.renderTopbar(user && user.role === 'admin' ? 'emails' : 'inbox');
+      const id = Number(M.qs('id'));
+      let list = M.data.emails.slice().sort((a, b) => b.ts - a.ts);
+      if (user && user.role !== 'admin') list = list.filter((e) => e.to.split(', ').includes(user.email) || e.id === id);
+      else if (!user) list = list.filter((e) => e.id === id);
+      let current = list.find((e) => e.id === id) || list[0];
+      function render() {
+        $('#list').innerHTML = list.length ? list.slice(0, 100).map((e) => `
+          <a href="#" data-id="${e.id}" style="display:block;padding:12px 16px;border-bottom:1px solid var(--gray-100);color:inherit;text-decoration:none;${current && e.id === current.id ? 'background:var(--green-50);border-left:4px solid var(--green)' : ''}">
+            <div style="display:flex;justify-content:space-between;gap:8px"><b class="small">${esc(M.EMAIL_KIND[e.kind].label)}</b><span class="muted small">${M.fmtDateTime(e.ts)}</span></div>
+            <div class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.subject)}</div>
+          </a>`).join('') : '<p class="muted" style="padding:16px">ยังไม่มีอีเมล</p>';
+        $('#preview').innerHTML = current ? M.renderEmail(current) : '';
+      }
+      $('#list').addEventListener('click', (ev) => {
+        const a = ev.target.closest('[data-id]'); if (!a) return; ev.preventDefault();
+        current = list.find((e) => e.id === Number(a.dataset.id)); render();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

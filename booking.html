@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>จองห้องประชุม</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>จองห้องประชุม</h1><div class="muted">กรอกข้อมูลการจองให้ครบถ้วน ระบบจะส่งอีเมลยืนยันทันทีเมื่อจองสำเร็จ</div></div>
+      <a class="btn btn-ghost" href="index.html">← กลับหน้าสถานะห้อง</a>
+    </div>
+
+    <div class="grid" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start" id="layout">
+      <form class="card" id="form" novalidate>
+        <div id="errors" class="alert alert-err hidden"></div>
+
+        <h2>1. เลือกห้องและเวลา</h2>
+        <div class="field">
+          <label>ห้องประชุม <span class="req">*</span></label>
+          <div class="grid grid-2" id="roomPick"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="date">วันที่ <span class="req">*</span></label><input class="input" type="date" id="date" required></div>
+          <div class="field"><label for="start">เวลาเริ่ม <span class="req">*</span></label><select id="start" required></select></div>
+          <div class="field"><label for="end">เวลาสิ้นสุด <span class="req">*</span></label><select id="end" required></select></div>
+        </div>
+        <div id="availability" class="alert hidden"></div>
+
+        <h2 style="margin-top:8px">2. ข้อมูลผู้จอง</h2>
+        <div class="row">
+          <div class="field"><label for="name">ชื่อผู้จอง <span class="req">*</span></label><input class="input" id="name" required></div>
+          <div class="field"><label for="department">แผนก <span class="req">*</span></label><input class="input" id="department" list="deptList" required><datalist id="deptList"></datalist></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="phone">เบอร์โทรศัพท์ <span class="req">*</span></label><input class="input" id="phone" placeholder="081-234-5678" required></div>
+          <div class="field"><label for="email">อีเมล <span class="req">*</span></label><input class="input" type="email" id="email" required><div class="hint">ใช้สำหรับส่งอีเมลยืนยัน/แจ้งเตือน</div></div>
+        </div>
+
+        <h2 style="margin-top:8px">3. รายละเอียดการใช้งาน</h2>
+        <div class="row">
+          <div class="field" style="flex:2"><label for="purpose">วัตถุประสงค์การใช้งาน <span class="req">*</span></label><input class="input" id="purpose" placeholder="เช่น ประชุมทีมประจำสัปดาห์" required></div>
+          <div class="field"><label for="attendees">จำนวนผู้เข้าร่วม</label><input class="input" type="number" id="attendees" min="1"><div class="hint" id="capHint"></div></div>
+        </div>
+        <div class="field"><label for="note">หมายเหตุเพิ่มเติม</label><textarea id="note" placeholder="เช่น ต้องการเตรียมไมโครโฟนเพิ่ม"></textarea></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <a class="btn btn-ghost" href="index.html">ยกเลิก</a>
+          <button class="btn" type="submit" id="submitBtn">ยืนยันการจอง</button>
+        </div>
+      </form>
+
+      <aside class="card">
+        <div class="card-head" style="margin-bottom:8px"><h2 style="margin:0">ตารางห้องในวันที่เลือก</h2></div>
+        <div class="muted small" id="dayTitle"></div>
+        <div class="legend" style="margin:8px 0 10px"><span><i class="lg-free"></i>ว่าง</span><span><i class="lg-busy"></i>ไม่ว่าง</span><span><i style="background:var(--green);"></i>ช่วงที่เลือก</span></div>
+        <div id="dayGrid"></div>
+        <div class="alert alert-ok small" style="margin-top:14px;margin-bottom:0">
+          📧 ระบบจะส่งอีเมลยืนยันทันทีหลังจองสำเร็จ และส่งอีเมลเตือนล่วงหน้า 1 วันก่อนใช้ห้อง (สามารถกดยกเลิกจากอีเมลได้)
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, $$, esc } = M;
+      let user;
+      try { user = M.requireUser(); } catch (e) { return; }
+      M.renderTopbar('book');
+      if (window.innerWidth < 900) $('#layout').style.gridTemplateColumns = '1fr';
+
+      const rooms = M.data.rooms;
+      let roomId = Number(M.qs('room')) || (rooms.find((r) => r.open) || {}).id;
+      if (!M.room(roomId) || !M.room(roomId).open) roomId = (rooms.find((r) => r.open) || {}).id;
+
+      $('#roomPick').innerHTML = rooms.map((r) => `
+        <label class="card" style="padding:12px;cursor:${r.open ? 'pointer' : 'not-allowed'};opacity:${r.open ? 1 : .55};box-shadow:none" data-room="${r.id}">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="radio" name="room" value="${r.id}" ${r.open ? '' : 'disabled'} style="accent-color:var(--green)">
+            <b>${esc(r.name)}</b>
+          </div>
+          <div class="muted small">ความจุ ${esc(r.capacityLabel)} · ${esc(r.floor)}</div>
+          <div>${r.open ? '<span class="pill pill-free">เปิดให้จอง</span>' : '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>'}</div>
+        </label>`).join('');
+      $('#deptList').innerHTML = M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('');
+      $('#start').innerHTML = M.timeOptions(false).map((t) => `<option>${t}</option>`).join('');
+      $('#end').innerHTML = M.timeOptions(true).map((t) => `<option>${t}</option>`).join('');
+
+      // ค่าเริ่มต้น
+      $('#date').min = M.today();
+      $('#date').value = M.qs('date') && M.qs('date') >= M.today() ? M.qs('date') : M.today();
+      const qsStart = M.qs('start'), qsEnd = M.qs('end');
+      if (qsStart) $('#start').value = qsStart; else $('#start').value = '09:00';
+      if (qsEnd) $('#end').value = qsEnd; else $('#end').value = M.fromMin(M.toMin($('#start').value) + 60);
+      $('#name').value = user.name; $('#department').value = user.department; $('#phone').value = user.phone; $('#email').value = user.email;
+      if (M.qs('people')) $('#attendees').value = M.qs('people');
+      $$('input[name=room]').forEach((i) => (i.checked = Number(i.value) === roomId));
+
+      function values() {
+        return {
+          roomId, date: $('#date').value, start: $('#start').value, end: $('#end').value,
+          name: $('#name').value, department: $('#department').value, phone: $('#phone').value, email: $('#email').value,
+          purpose: $('#purpose').value, attendees: $('#attendees').value, note: $('#note').value,
+        };
+      }
+
+      function refresh() {
+        const v = values(), r = M.room(roomId);
+        $('#capHint').textContent = r ? `ความจุสูงสุด ${r.capacityLabel}` : '';
+        $('#attendees').max = r ? r.capacity : '';
+        $$('#roomPick [data-room]').forEach((c) => (c.style.borderColor = Number(c.dataset.room) === roomId ? 'var(--green)' : ''));
+        // ตรวจสอบห้องว่างแบบ real-time
+        const box = $('#availability');
+        box.className = 'alert';
+        if (M.toMin(v.end) <= M.toMin(v.start)) { box.classList.add('alert-err'); box.textContent = 'เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม'; }
+        else if (v.date < M.today() || (v.date === M.today() && M.toMin(v.start) < M.nowMin())) { box.classList.add('alert-err'); box.textContent = 'ไม่สามารถจองเวลาที่ผ่านมาแล้วได้'; }
+        else {
+          const c = M.findConflicts(roomId, v.date, v.start, v.end);
+          if (c.length) { box.classList.add('alert-err'); box.innerHTML = `✕ <b>ไม่ว่าง</b> — ช่วงเวลานี้ทับซ้อนกับการจอง ${c.map((b) => `${b.start}–${b.end}`).join(', ')} กรุณาเลือกเวลาอื่น`; }
+          else { box.classList.add('alert-ok'); box.innerHTML = `✓ <b>ว่าง</b> — ${esc(r.name)} ${M.fmtDateLong(v.date)} เวลา ${v.start}–${v.end} น. สามารถจองได้`; }
+        }
+        $('#submitBtn').disabled = box.classList.contains('alert-err');
+        // ตารางข้าง ๆ
+        $('#dayTitle').textContent = `${r.name} · ${M.fmtDateLong(v.date)}`;
+        const list = M.bookingsOn(v.date, roomId);
+        $('#dayGrid').innerHTML = `<div class="timeline" style="grid-template-columns:60px 1fr">` + M.slots().map((t) => {
+          const b = list.find((x) => M.toMin(x.start) <= M.toMin(t) && M.toMin(t) < M.toMin(x.end));
+          const sel = M.toMin(t) >= M.toMin(v.start) && M.toMin(t) < M.toMin(v.end);
+          const past = v.date === M.today() && M.toMin(t) + M.SLOT_MIN <= M.nowMin();
+          let cell;
+          if (b) cell = `<div class="slot busy ${b.start === t ? 'start' : ''}" style="${sel ? 'box-shadow:inset 0 0 0 3px #7a1f1f' : ''}">${b.start === t ? `${b.start}-${b.end} ${esc(b.department)}` : ''}</div>`;
+          else if (past) cell = `<div class="slot off past"></div>`;
+          else cell = `<div class="slot" data-time="${t}" style="${sel ? 'background:var(--green);color:#fff' : ''}">${sel ? 'ช่วงที่เลือก' : 'ว่าง'}</div>`;
+          return `<div class="time">${t}</div>${cell}`;
+        }).join('') + '</div>';
+      }
+
+      $('#roomPick').addEventListener('change', (e) => { roomId = Number(e.target.value); refresh(); });
+      ['#date', '#start', '#end'].forEach((s) => $(s).addEventListener('change', () => {
+        if (s === '#start' && M.toMin($('#end').value) <= M.toMin($('#start').value)) $('#end').value = M.fromMin(Math.min(M.toMin($('#start').value) + 60, M.toMin(M.CLOSE_TIME)));
+        refresh();
+      }));
+      $('#dayGrid').addEventListener('click', (e) => {
+        const s = e.target.closest('.slot[data-time]'); if (!s) return;
+        $('#start').value = s.dataset.time;
+        $('#end').value = M.fromMin(Math.min(M.toMin(s.dataset.time) + 60, M.toMin(M.CLOSE_TIME)));
+        refresh();
+      });
+
+      $('#form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const res = M.createBooking(values(), user);
+        const box = $('#errors');
+        if (!res.ok) {
+          box.innerHTML = '<b>ไม่สามารถจองได้</b><ul style="margin:6px 0 0;padding-left:18px">' + res.errors.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
+          box.classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        box.classList.add('hidden');
+        const b = res.booking;
+        M.modal(`
+          <div style="text-align:center">
+            <div style="width:64px;height:64px;border-radius:50%;background:var(--green-50);color:var(--green);display:grid;place-items:center;margin:0 auto 10px;font-size:2rem">✓</div>
+            <h2>จองห้องประชุมสำเร็จ</h2>
+            <p class="muted" style="margin-top:0">รหัสการจอง <b style="color:var(--ink)">${b.code}</b></p>
+          </div>
+          <dl class="kv">
+            <dt>ห้อง</dt><dd>${esc(M.room(b.roomId).name)}</dd>
+            <dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
+            <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
+            <dt>วัตถุประสงค์</dt><dd>${esc(b.purpose)}</dd>
+          </dl>
+          <div class="alert alert-ok small" style="margin-top:14px">📧 ส่งอีเมลยืนยันไปที่ <b>${esc(b.email)}</b> แล้ว</div>
+          <div class="foot">
+            <a class="btn btn-ghost" href="email.html?id=${res.email.id}">ดูอีเมลยืนยัน</a>
+            <a class="btn btn-outline" href="my-bookings.html">การจองของฉัน</a>
+            <a class="btn" href="index.html?date=${b.date}">กลับหน้าแรก</a>
+          </div>`);
+      });
+
+      refresh();
+    })();
+  </script>
+</body>
+</html>

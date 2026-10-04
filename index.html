@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>สถานะห้องประชุม</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container">
+    <div class="page-head">
+      <div>
+        <h1>สถานะห้องประชุม</h1>
+        <div class="muted" id="todayLabel"></div>
+      </div>
+      <a class="btn" href="booking.html">+ จองห้องประชุม</a>
+    </div>
+
+    <!-- สถานะห้อง ณ ปัจจุบัน -->
+    <section class="grid grid-2" id="roomCards" style="margin-bottom:20px"></section>
+
+    <div class="side-layout">
+      <!-- ตัวกรอง -->
+      <aside class="card">
+        <h2>ค้นหาห้องที่ว่าง</h2>
+        <p class="muted small" style="margin-top:0">กรองตามจำนวนคน สิ่งอำนวยความสะดวก และช่วงเวลาที่ต้องการ</p>
+        <div class="field">
+          <label for="fPeople">จำนวนผู้เข้าร่วม (คน)</label>
+          <input class="input" type="number" id="fPeople" min="1" max="50" placeholder="เช่น 8">
+        </div>
+        <div class="field">
+          <label for="fDate">วันที่</label>
+          <input class="input" type="date" id="fDate">
+        </div>
+        <div class="field">
+          <label>ช่วงเวลา</label>
+          <div class="row">
+            <select id="fFrom" aria-label="ตั้งแต่"></select>
+            <select id="fTo" aria-label="ถึง"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>สิ่งอำนวยความสะดวก</label>
+          <div id="fAmenities"></div>
+        </div>
+        <div class="field">
+          <label for="fShowClosed" class="check" style="font-weight:400"><input type="checkbox" id="fShowClosed" checked> แสดงห้องที่ยังไม่เปิดให้จอง</label>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" id="fReset" type="button">ล้างตัวกรอง</button>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--gray-100);margin:18px 0">
+        <h3>ผลการค้นหา</h3>
+        <div id="results"></div>
+      </aside>
+
+      <!-- ปฏิทิน -->
+      <section class="card">
+        <div class="cal-toolbar">
+          <div class="segmented" id="viewSwitch">
+            <button data-view="day" class="active">รายวัน</button>
+            <button data-view="week">รายสัปดาห์</button>
+            <button data-view="month">รายเดือน</button>
+          </div>
+          <div class="cal-nav">
+            <button class="icon-btn" id="prev" aria-label="ก่อนหน้า">‹</button>
+            <div class="title" id="calTitle"></div>
+            <button class="icon-btn" id="next" aria-label="ถัดไป">›</button>
+            <button class="btn btn-ghost btn-sm" id="goToday">วันนี้</button>
+          </div>
+          <select id="weekRoom" class="hidden" style="width:auto"></select>
+        </div>
+        <div class="legend" style="margin-bottom:12px">
+          <span><i class="lg-free"></i>ว่าง</span>
+          <span><i class="lg-busy"></i>ไม่ว่าง (มีการจอง)</span>
+          <span><i class="lg-part"></i>จองบางช่วง (รายเดือน)</span>
+          <span><i class="lg-off"></i>ยังไม่เปิดให้จอง / เลยเวลา</span>
+        </div>
+        <div id="calendar"></div>
+        <p class="muted small" style="margin-bottom:0">คลิกช่องสีเขียวเพื่อจองห้องในเวลานั้น · คลิกช่องสีแดงเพื่อดูรายละเอียด</p>
+      </section>
+    </div>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script src="assets/home.js"></script>
+</body>
+</html>

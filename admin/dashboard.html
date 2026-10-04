@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard ผู้ดูแลระบบ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>Dashboard ภาพรวม</h1><div class="muted" id="sub"></div></div>
+      <div style="display:flex;gap:8px"><a class="btn btn-outline" href="../index.html">ดูสถานะห้อง</a><a class="btn" href="bookings.html">รายการจองทั้งหมด</a></div>
+    </div>
+
+    <section class="grid grid-4" id="kpis" style="margin-bottom:16px"></section>
+
+    <section class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-bottom:16px" id="row1">
+      <div class="card">
+        <div class="card-head"><h2 style="margin:0">จำนวนการจองรายวัน</h2><span class="muted small">14 วันล่าสุด + 7 วันข้างหน้า</span></div>
+        <div class="vbars" id="daily"></div><div class="vbars-x" id="dailyX"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2 style="margin:0">สถานะการจองทั้งหมด</h2></div>
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap" id="donut"></div>
+      </div>
+    </section>
+
+    <section class="grid grid-3" style="margin-bottom:16px" id="row2">
+      <div class="card"><div class="card-head"><h2 style="margin:0">การจองตามแผนก</h2><span class="muted small">เดือนนี้</span></div><div id="byDept"></div></div>
+      <div class="card"><div class="card-head"><h2 style="margin:0">ช่วงเวลายอดนิยม</h2><span class="muted small">เดือนนี้</span></div><div id="byHour"></div></div>
+      <div class="card"><div class="card-head"><h2 style="margin:0">สถานะห้อง</h2></div><div id="rooms"></div></div>
+    </section>
+
+    <section class="grid grid-3" id="row3">
+      <div class="card"><div class="card-head"><h2 style="margin:0">ตารางวันนี้</h2><a class="small" href="../index.html">ดูปฏิทิน →</a></div><div id="today"></div></div>
+      <div class="card"><div class="card-head"><h2 style="margin:0">คำขอยกเลิกรออนุมัติ</h2><a class="small" href="cancel-requests.html">ทั้งหมด →</a></div><div id="pending"></div></div>
+      <div class="card"><div class="card-head"><h2 style="margin:0">กิจกรรมล่าสุด</h2><a class="small" href="history.html">ประวัติ →</a></div><ul class="tl" id="activity"></ul></div>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      let admin;
+      try { admin = M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('dashboard');
+      if (window.innerWidth < 900) { $('#row1').style.gridTemplateColumns = '1fr'; }
+
+      function render() {
+        const D = M.data, td = M.today(), now = new Date();
+        const ym = td.slice(0, 7);
+        const active = M.activeBookings();
+        const month = active.filter((b) => b.date.startsWith(ym));
+        const lastYm = M.iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
+        const lastMonth = active.filter((b) => b.date.startsWith(lastYm));
+        const pending = D.bookings.filter((b) => b.status === 'cancel_requested');
+        const cancelledMonth = D.bookings.filter((b) => b.status === 'cancelled' && b.date.startsWith(ym));
+        // อัตราการใช้ห้อง 1 (เดือนนี้, เฉพาะวันทำการ)
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        let workdays = 0;
+        for (let d = 1; d <= daysInMonth; d++) { const wd = new Date(now.getFullYear(), now.getMonth(), d).getDay(); if (wd && wd !== 6) workdays++; }
+        const openMin = M.toMin(M.CLOSE_TIME) - M.toMin(M.OPEN_TIME);
+        const usedMin = month.filter((b) => b.roomId === 1).reduce((s, b) => s + M.toMin(b.end) - M.toMin(b.start), 0);
+        const util = Math.round((usedMin / (workdays * openMin)) * 100);
+        const diff = month.length - lastMonth.length;
+
+        $('#sub').textContent = 'ข้อมูล ณ ' + M.fmtDateLong(td);
+        $('#kpis').innerHTML = `
+          <div class="card kpi"><span class="label">การจองวันนี้</span><span class="value">${active.filter((b) => b.date === td).length}</span><span class="delta muted">ห้องที่เปิดให้จอง ${D.rooms.filter((r) => r.open).length} ห้อง</span></div>
+          <div class="card kpi"><span class="label">การจองเดือนนี้</span><span class="value">${month.length}</span><span class="delta" style="color:${diff >= 0 ? 'var(--green-700)' : 'var(--red)'}">${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)} จากเดือนก่อน</span></div>
+          <div class="card kpi"><span class="label">อัตราการใช้ห้องประชุม 1</span><span class="value">${util}%</span><span class="delta muted">${Math.round(usedMin / 60)} ชม. จาก ${workdays * openMin / 60} ชม. (วันทำการ)</span></div>
+          <a class="card kpi ${pending.length ? 'alert' : ''}" href="cancel-requests.html" style="color:inherit;text-decoration:none"><span class="label">คำขอยกเลิกรออนุมัติ</span><span class="value">${pending.length}</span><span class="delta muted">ยกเลิกแล้วเดือนนี้ ${cancelledMonth.length} รายการ</span></a>`;
+
+        // daily bars
+        const days = [...Array(21)].map((_, i) => M.addDays(now, i - 14));
+        const counts = days.map((d) => active.filter((b) => b.date === M.iso(d)).length);
+        const max = Math.max(1, ...counts);
+        $('#daily').innerHTML = days.map((d, i) => `<div class="col" title="${M.fmtDate(M.iso(d))}: ${counts[i]} รายการ"><span class="v">${counts[i] || ''}</span>
+          <div class="b" style="height:${(counts[i] / max) * 85}%;${M.iso(d) === td ? 'background:var(--green-700)' : M.iso(d) > td ? 'background:var(--green-100)' : ''}"></div></div>`).join('');
+        $('#dailyX').innerHTML = days.map((d, i) => `<span>${i % 2 === 0 || M.iso(d) === td ? d.getDate() : ''}</span>`).join('');
+
+        // donut
+        const st = { confirmed: 0, cancel_requested: 0, cancelled: 0 };
+        D.bookings.forEach((b) => st[b.status]++);
+        const total = D.bookings.length || 1;
+        const p1 = (st.confirmed / total) * 100, p2 = p1 + (st.cancel_requested / total) * 100;
+        $('#donut').innerHTML = `<div class="donut" style="background:conic-gradient(var(--green) 0 ${p1}%, var(--amber) ${p1}% ${p2}%, var(--gray-400) ${p2}% 100%)"><div class="hole">${D.bookings.length}<span class="muted small" style="font-weight:400">รายการ</span></div></div>
+          <div class="legend" style="flex-direction:column;gap:8px">
+            <span><i style="background:var(--green)"></i>ยืนยันแล้ว ${st.confirmed}</span>
+            <span><i style="background:var(--amber)"></i>รออนุมัติยกเลิก ${st.cancel_requested}</span>
+            <span><i style="background:var(--gray-400)"></i>ยกเลิกแล้ว ${st.cancelled}</span></div>`;
+
+        // by department
+        const dep = {};
+        month.forEach((b) => (dep[b.department] = (dep[b.department] || 0) + 1));
+        const depArr = Object.entries(dep).sort((a, b) => b[1] - a[1]);
+        const dmax = Math.max(1, ...depArr.map((x) => x[1]));
+        $('#byDept').innerHTML = depArr.map(([k, v]) => `<div class="hbar"><span title="${esc(k)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span><div class="track"><div class="fill" style="width:${(v / dmax) * 100}%"></div></div><b>${v}</b></div>`).join('') || '<p class="muted">ไม่มีข้อมูล</p>';
+
+        // by hour
+        const hours = {};
+        month.forEach((b) => { for (let m = M.toMin(b.start); m < M.toMin(b.end); m += 60) { const h = Math.floor(m / 60); hours[h] = (hours[h] || 0) + 1; } });
+        const hmax = Math.max(1, ...Object.values(hours));
+        let hh = '';
+        for (let h = 8; h < 18; h++) hh += `<div class="hbar" style="grid-template-columns:90px 1fr 32px"><span>${M.pad(h)}:00–${M.pad(h + 1)}:00</span><div class="track"><div class="fill" style="width:${((hours[h] || 0) / hmax) * 100}%"></div></div><b>${hours[h] || 0}</b></div>`;
+        $('#byHour').innerHTML = hh;
+
+        // rooms
+        const nowM = M.nowMin();
+        $('#rooms').innerHTML = D.rooms.map((r) => {
+          const cur = M.bookingsOn(td, r.id).find((b) => M.toMin(b.start) <= nowM && nowM < M.toMin(b.end));
+          const pill = !r.open ? '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>' : cur ? '<span class="pill pill-busy">ไม่ว่าง</span>' : '<span class="pill pill-free">ว่าง</span>';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <div><b>${esc(r.name)}</b><div class="muted small">ความจุ ${esc(r.capacityLabel)}${cur ? ` · ใช้งานถึง ${cur.end}` : ''}</div></div>${pill}</div>`;
+        }).join('') + '<a class="btn btn-ghost btn-sm" style="margin-top:12px" href="rooms.html">จัดการห้อง</a>';
+
+        // today
+        const tlist = active.filter((b) => b.date === td).sort((a, b) => a.start.localeCompare(b.start));
+        $('#today').innerHTML = tlist.length ? tlist.map((b) => `
+          <div style="display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--gray-100)">
+            <div style="min-width:104px;white-space:nowrap;font-weight:600;color:${M.toMin(b.end) <= nowM ? 'var(--gray-400)' : 'var(--green-700)'}">${b.start}–${b.end}</div>
+            <div><div>${esc(b.purpose)}</div><div class="muted small">${esc(b.name)} · ${esc(b.department)} · ${esc(M.room(b.roomId).name)}</div></div>
+          </div>`).join('') : '<p class="muted">วันนี้ไม่มีการจอง</p>';
+
+        // pending
+        $('#pending').innerHTML = pending.length ? pending.map((b) => `
+          <div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <div style="display:flex;justify-content:space-between;gap:8px"><b>${b.code}</b><span class="muted small">${M.fmtDate(b.date)} ${b.start}–${b.end}</span></div>
+            <div class="small">${esc(b.name)} · ${esc(b.department)}</div>
+            <div class="small muted">เหตุผล: ${esc(b.cancelReason)}</div>
+            <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-sm" data-approve="${b.id}">อนุมัติยกเลิก</button><button class="btn btn-sm btn-ghost" data-reject="${b.id}">ปฏิเสธ</button></div>
+          </div>`).join('') : '<p class="muted">ไม่มีคำขอที่รออนุมัติ</p>';
+
+        // activity
+        $('#activity').innerHTML = D.logs.slice().sort((a, b) => b.ts - a.ts).slice(0, 7).map((l) => `
+          <li class="${/cancel_approved|admin_cancelled/.test(l.action) ? 'red' : /cancel/.test(l.action) ? 'amber' : ''}"><b>${M.LOG_LABEL[l.action]}</b> ${l.code ? '· ' + l.code : ''}<br>
+          <span class="muted small">${esc(l.actorName)} · ${M.fmtDateTime(l.ts)}</span></li>`).join('');
+      }
+
+      $('#pending').addEventListener('click', (e) => {
+        const a = e.target.closest('[data-approve]'), r = e.target.closest('[data-reject]');
+        if (a) { M.approveCancel(Number(a.dataset.approve), admin); M.toast('อนุมัติการยกเลิกแล้ว · ส่งอีเมลแจ้งผู้จองแล้ว'); }
+        if (r) { M.rejectCancel(Number(r.dataset.reject), '', admin); M.toast('ปฏิเสธคำขอแล้ว · ส่งอีเมลแจ้งผู้จองแล้ว'); }
+        if (a || r) { M.renderTopbar('dashboard'); render(); }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

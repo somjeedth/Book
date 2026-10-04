@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>อีเมลแจ้งเตือน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>อีเมลแจ้งเตือน</h1><div class="muted">บันทึกการส่งอีเมลทั้งหมด: ยืนยันการจอง · แจ้งยกเลิก · เตือนล่วงหน้า 1 วัน</div></div>
+      <button class="btn" id="runReminder">▶ จำลองรอบส่งอีเมลเตือน (การจองของพรุ่งนี้)</button>
+    </div>
+    <div class="alert alert-ok small">ระบบจริงจะตั้งเวลาอัตโนมัติ (เช่น ทุกวันเวลา 09:00 น.) เพื่อส่งอีเมลเตือนผู้ที่มีการจองในวันถัดไป พร้อมปุ่ม “ยกเลิกการจอง” ในอีเมล</div>
+    <section class="card" style="margin-bottom:16px">
+      <div class="filters">
+        <div class="field" style="flex:2"><label for="q">ค้นหา</label><input class="input" id="q" placeholder="ผู้รับ / หัวเรื่อง"></div>
+        <div class="field"><label for="kind">ประเภท</label><select id="kind"><option value="">ทั้งหมด</option></select></div>
+      </div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>ส่งเมื่อ</th><th>ประเภท</th><th>ผู้รับ</th><th>หัวเรื่อง</th><th>สถานะ</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      try { M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('emails');
+      $('#kind').innerHTML += Object.entries(M.EMAIL_KIND).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+      function render() {
+        const q = $('#q').value.trim().toLowerCase(), k = $('#kind').value;
+        const list = M.data.emails.filter((e) => (!k || e.kind === k) && (!q || (e.to + e.subject).toLowerCase().includes(q))).sort((a, b) => b.ts - a.ts);
+        $('#rows').innerHTML = list.slice(0, 300).map((e) => `<tr>
+          <td class="small" style="white-space:nowrap">${M.fmtDateTime(e.ts)}</td>
+          <td><span class="pill ${e.kind === 'reminder' ? 'pill-warn' : e.kind === 'cancelled' ? 'pill-busy' : 'pill-free'}">${M.EMAIL_KIND[e.kind].label}</span></td>
+          <td class="small">${esc(e.to)}</td><td>${esc(e.subject)}</td>
+          <td><span class="pill pill-free pill-plain">ส่งสำเร็จ</span></td>
+          <td class="actions"><button class="btn btn-sm btn-ghost" data-id="${e.id}">ดูตัวอย่าง</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">ไม่พบรายการ</td></tr>';
+      }
+      ['#q', '#kind'].forEach((s) => $(s).addEventListener('input', render));
+      $('#rows').addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-id]'); if (!b) return;
+        const e = M.data.emails.find((x) => x.id === Number(b.dataset.id));
+        M.modal(M.renderEmail(e) + '<div class="foot"><button class="btn btn-ghost" data-close>ปิด</button></div>', (el) => { el.style.maxWidth = '680px'; });
+      });
+      $('#runReminder').addEventListener('click', () => {
+        const sent = M.runReminders();
+        render();
+        M.toast(sent.length ? `ส่งอีเมลเตือนแล้ว ${sent.length} ฉบับ` : 'ไม่มีการจองของพรุ่งนี้ที่ต้องส่งเตือน (หรือส่งไปแล้ว)', sent.length ? 'ok' : '');
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

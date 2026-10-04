@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เข้าสู่ระบบผู้จอง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <div class="auth-wrap">
+    <section class="auth-hero">
+      <a class="brand" href="index.html"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
+      <div>
+        <h1>จองห้องประชุมได้ง่าย ๆ<br>ในไม่กี่คลิก</h1>
+        <ul>
+          <li>ดูสถานะห้องว่าง / ไม่ว่าง แบบรายวัน สัปดาห์ เดือน</li>
+          <li>ระบบป้องกันการจองเวลาซ้อนกัน</li>
+          <li>รับอีเมลยืนยัน และแจ้งเตือนก่อนใช้ห้อง 1 วัน</li>
+        </ul>
+      </div>
+      <div class="small" style="opacity:.8">ห้องประชุม 1 (13 คน) · ห้องประชุม 2 (5–6 คน, เร็ว ๆ นี้)</div>
+    </section>
+    <section class="auth-form">
+      <div class="box">
+        <div class="segmented" id="tabs" style="margin-bottom:20px;width:100%">
+          <button class="active" data-tab="login" style="flex:1">เข้าสู่ระบบ</button>
+          <button data-tab="register" style="flex:1">สมัครสมาชิก</button>
+        </div>
+        <div id="err" class="alert alert-err hidden"></div>
+
+        <form id="loginForm" novalidate>
+          <h2>เข้าสู่ระบบสำหรับผู้จอง</h2>
+          <p class="muted small" style="margin-top:0">ใช้อีเมลบริษัทในการเข้าสู่ระบบ</p>
+          <div class="field"><label for="lEmail">อีเมล</label><input class="input" type="email" id="lEmail" autocomplete="username" placeholder="name@company.co.th"></div>
+          <div class="field"><label for="lPass">รหัสผ่าน</label><input class="input" type="password" id="lPass" autocomplete="current-password"></div>
+          <button class="btn btn-block" type="submit">เข้าสู่ระบบ</button>
+          <div class="alert alert-warn small" style="margin-top:16px">บัญชีทดลอง: <b>somchai@company.co.th</b> / <b>1234</b>
+            <button type="button" class="btn btn-sm btn-ghost" id="fillDemo" style="margin-left:6px">กรอกให้</button></div>
+        </form>
+
+        <form id="regForm" class="hidden" novalidate>
+          <h2>สมัครสมาชิก</h2>
+          <div class="field"><label for="rName">ชื่อ-นามสกุล <span class="req">*</span></label><input class="input" id="rName"></div>
+          <div class="field"><label for="rDept">แผนก <span class="req">*</span></label><select id="rDept"></select></div>
+          <div class="row">
+            <div class="field"><label for="rPhone">เบอร์โทรศัพท์ <span class="req">*</span></label><input class="input" id="rPhone" placeholder="081-234-5678"></div>
+          </div>
+          <div class="field"><label for="rEmail">อีเมล <span class="req">*</span></label><input class="input" type="email" id="rEmail"></div>
+          <div class="field"><label for="rPass">รหัสผ่าน <span class="req">*</span></label><input class="input" type="password" id="rPass" minlength="4"></div>
+          <button class="btn btn-block" type="submit">สมัครและเข้าสู่ระบบ</button>
+        </form>
+
+        <div class="switch-link"><a href="admin/login.html">เข้าสู่ระบบสำหรับผู้ดูแลระบบ (Admin) →</a></div>
+        <div class="switch-link" style="margin-top:6px"><a href="index.html">← ดูสถานะห้องโดยไม่เข้าสู่ระบบ</a></div>
+      </div>
+    </section>
+  </div>
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, $$ } = M;
+      const next = M.qs('next') || 'index.html';
+      const showErr = (m) => { const e = $('#err'); e.textContent = m; e.classList.toggle('hidden', !m); };
+      $('#rDept').innerHTML = '<option value="">-- เลือกแผนก --</option>' + M.DEPARTMENTS.map((d) => `<option>${d}</option>`).join('');
+      $('#tabs').addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        $$('#tabs button').forEach((x) => x.classList.toggle('active', x === b));
+        $('#loginForm').classList.toggle('hidden', b.dataset.tab !== 'login');
+        $('#regForm').classList.toggle('hidden', b.dataset.tab !== 'register');
+        showErr('');
+      });
+      $('#fillDemo').addEventListener('click', () => { $('#lEmail').value = 'somchai@company.co.th'; $('#lPass').value = '1234'; });
+      $('#loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const r = M.login($('#lEmail').value, $('#lPass').value, 'user');
+        if (!r.ok) return showErr(r.error);
+        location.href = r.user.role === 'admin' ? 'admin/dashboard.html' : next;
+      });
+      $('#regForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const o = { name: $('#rName').value.trim(), department: $('#rDept').value, phone: $('#rPhone').value.trim(), email: $('#rEmail').value.trim(), password: $('#rPass').value };
+        if (!o.name || !o.department || !o.phone || !o.email || !o.password) return showErr('กรุณากรอกข้อมูลให้ครบถ้วน');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) return showErr('รูปแบบอีเมลไม่ถูกต้อง');
+        if (o.password.length < 4) return showErr('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร');
+        const r = M.register(o);
+        if (!r.ok) return showErr(r.error);
+        location.href = next;
+      });
+    })();
+  </script>
+</body>
+</html>

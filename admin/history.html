@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ประวัติการจอง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>ประวัติการจอง (Audit Log)</h1><div class="muted">บันทึกทุกการเปลี่ยนแปลงอย่างละเอียด: ผู้ทำรายการ ชื่อผู้จอง แผนก วัน-เวลา เพื่อตรวจสอบย้อนหลัง</div></div>
+      <button class="btn btn-outline" id="export">ดาวน์โหลด CSV</button>
+    </div>
+    <section class="card">
+      <div class="filters">
+        <div class="field" style="flex:2"><label for="q">ค้นหา</label><input class="input" id="q" placeholder="รหัสการจอง / ชื่อ / แผนก / รายละเอียด"></div>
+        <div class="field"><label for="action">ประเภทรายการ</label><select id="action"><option value="">ทั้งหมด</option></select></div>
+        <div class="field"><label for="from">ตั้งแต่</label><input class="input" type="date" id="from"></div>
+        <div class="field"><label for="to">ถึง</label><input class="input" type="date" id="to"></div>
+      </div>
+      <div class="muted small" id="count" style="margin-bottom:8px"></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>วัน-เวลาที่บันทึก</th><th>รายการ</th><th>รหัสการจอง</th><th>ชื่อผู้จอง</th><th>แผนก</th><th>วัน-เวลาที่ใช้ห้อง</th><th>ผู้ทำรายการ</th><th>รายละเอียด</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      try { M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('history');
+      $('#action').innerHTML += Object.entries(M.LOG_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+      const pillCls = { created: 'pill-free', cancel_requested: 'pill-warn', cancel_rejected: 'pill-warn', cancel_approved: 'pill-busy', admin_cancelled: 'pill-busy', reminder_sent: 'pill-off', room_updated: 'pill-off' };
+      const roleTxt = { admin: 'แอดมิน', user: 'ผู้จอง', system: 'ระบบอัตโนมัติ' };
+      function filtered() {
+        const q = $('#q').value.trim().toLowerCase(), a = $('#action').value, f = $('#from').value, t = $('#to').value;
+        return M.data.logs.filter((l) => {
+          const d = M.iso(new Date(l.ts));
+          const s = l.snapshot || {};
+          return (!a || l.action === a) && (!f || d >= f) && (!t || d <= t) &&
+            (!q || [l.code, s.name, s.department, l.actorName, l.detail].join(' ').toLowerCase().includes(q));
+        }).sort((x, y) => y.ts - x.ts);
+      }
+      function render() {
+        const list = filtered();
+        $('#count').textContent = `พบ ${list.length} รายการ`;
+        $('#rows').innerHTML = list.slice(0, 400).map((l) => {
+          const s = l.snapshot || {};
+          return `<tr><td class="small" style="white-space:nowrap">${M.fmtDateTime(l.ts)}</td>
+            <td><span class="pill ${pillCls[l.action]}">${M.LOG_LABEL[l.action]}</span></td>
+            <td>${l.code ? `<a href="#" data-b="${l.bookingId}"><b>${l.code}</b></a>` : '-'}</td>
+            <td>${esc(s.name || '-')}</td><td>${esc(s.department || '-')}</td>
+            <td class="small">${s.date ? `${M.fmtDate(s.date)} ${s.start}–${s.end}` : '-'}</td>
+            <td>${esc(l.actorName)}<div class="muted small">${roleTxt[l.actorRole] || ''}</div></td>
+            <td class="small">${esc(l.detail)}</td></tr>`;
+        }).join('') || '<tr><td colspan="8" class="muted" style="text-align:center;padding:30px">ไม่พบรายการ</td></tr>';
+      }
+      ['#q', '#action', '#from', '#to'].forEach((s) => $(s).addEventListener('input', render));
+      $('#rows').addEventListener('click', (e) => {
+        const a = e.target.closest('[data-b]'); if (!a) return; e.preventDefault();
+        M.modal(M.bookingDetailHTML(M.data.bookings.find((b) => b.id === Number(a.dataset.b))));
+      });
+      $('#export').addEventListener('click', () => {
+        const rows = [['วันเวลาที่บันทึก', 'รายการ', 'รหัสการจอง', 'ชื่อผู้จอง', 'แผนก', 'วันที่ใช้ห้อง', 'เวลา', 'ผู้ทำรายการ', 'บทบาท', 'รายละเอียด']];
+        filtered().forEach((l) => { const s = l.snapshot || {}; rows.push([M.fmtDateTime(l.ts), M.LOG_LABEL[l.action], l.code || '', s.name || '', s.department || '', s.date || '', s.start ? `${s.start}-${s.end}` : '', l.actorName, roleTxt[l.actorRole] || '', l.detail]); });
+        M.downloadCSV(`booking-history-${M.today()}.csv`, rows);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

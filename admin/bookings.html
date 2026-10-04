@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายการจองทั้งหมด</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>รายการจองทั้งหมด</h1><div class="muted">ค้นหา กรอง ดูรายละเอียด และยกเลิกการจอง</div></div>
+      <button class="btn btn-outline" id="export">ดาวน์โหลด CSV</button>
+    </div>
+    <section class="card">
+      <div class="filters">
+        <div class="field" style="flex:2"><label for="q">ค้นหา</label><input class="input" id="q" placeholder="รหัส / ชื่อผู้จอง / แผนก / วัตถุประสงค์ / อีเมล"></div>
+        <div class="field"><label for="room">ห้อง</label><select id="room"><option value="">ทุกห้อง</option></select></div>
+        <div class="field"><label for="status">สถานะ</label><select id="status"><option value="">ทุกสถานะ</option></select></div>
+        <div class="field"><label for="dept">แผนก</label><select id="dept"><option value="">ทุกแผนก</option></select></div>
+        <div class="field"><label for="from">ตั้งแต่วันที่</label><input class="input" type="date" id="from"></div>
+        <div class="field"><label for="to">ถึงวันที่</label><input class="input" type="date" id="to"></div>
+      </div>
+      <div class="muted small" id="count" style="margin-bottom:8px"></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>รหัส</th><th>วัน-เวลา</th><th>ห้อง</th><th>ผู้จอง / แผนก</th><th>ติดต่อ</th><th>วัตถุประสงค์</th><th>สถานะ</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      let admin;
+      try { admin = M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('bookings');
+      $('#room').innerHTML += M.data.rooms.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+      $('#status').innerHTML += Object.entries(M.STATUS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+      const depts = [...new Set(M.data.bookings.map((b) => b.department).concat(M.DEPARTMENTS))].sort();
+      $('#dept').innerHTML += depts.map((d) => `<option>${esc(d)}</option>`).join('');
+      if (M.qs('status')) $('#status').value = M.qs('status');
+
+      function filtered() {
+        const q = $('#q').value.trim().toLowerCase(), room = $('#room').value, st = $('#status').value, dept = $('#dept').value, f = $('#from').value, t = $('#to').value;
+        return M.data.bookings.filter((b) =>
+          (!q || [b.code, b.name, b.department, b.purpose, b.email, b.phone].join(' ').toLowerCase().includes(q)) &&
+          (!room || b.roomId === Number(room)) && (!st || b.status === st) && (!dept || b.department === dept) &&
+          (!f || b.date >= f) && (!t || b.date <= t)
+        ).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
+      }
+      function render() {
+        const list = filtered();
+        $('#count').textContent = `พบ ${list.length} รายการ`;
+        $('#rows').innerHTML = list.length ? list.slice(0, 300).map((b) => `
+          <tr>
+            <td><b>${b.code}</b><div class="muted small">${M.fmtDateTime(b.createdAt)}</div></td>
+            <td>${M.fmtDate(b.date)}<div class="muted small">${b.start}–${b.end} น.</div></td>
+            <td>${esc(M.room(b.roomId).name)}</td>
+            <td>${esc(b.name)}<div class="muted small">${esc(b.department)}</div></td>
+            <td class="small">${esc(b.phone)}<div class="muted">${esc(b.email)}</div></td>
+            <td>${esc(b.purpose)}${b.attendees ? `<div class="muted small">${b.attendees} คน</div>` : ''}</td>
+            <td>${M.statusPill(b.status)}</td>
+            <td class="actions"><button class="btn btn-sm btn-ghost" data-view="${b.id}">ดู</button>
+              ${b.status !== 'cancelled' ? `<button class="btn btn-sm btn-danger" data-cancel="${b.id}">ยกเลิก</button>` : ''}</td>
+          </tr>`).join('') : '<tr><td colspan="8" class="muted" style="text-align:center;padding:30px">ไม่พบรายการ</td></tr>';
+      }
+      ['#q', '#room', '#status', '#dept', '#from', '#to'].forEach((s) => $(s).addEventListener('input', render));
+      $('#rows').addEventListener('click', (e) => {
+        const v = e.target.closest('[data-view]'), c = e.target.closest('[data-cancel]');
+        if (v) M.modal(M.bookingDetailHTML(M.data.bookings.find((b) => b.id === Number(v.dataset.view))));
+        if (c) {
+          const b = M.data.bookings.find((x) => x.id === Number(c.dataset.cancel));
+          M.modal(`<h2>ยกเลิกการจอง ${b.code}</h2>
+            <p class="muted" style="margin-top:0">${esc(b.name)} · ${M.fmtDateLong(b.date)} ${b.start}–${b.end} น.</p>
+            <div class="field"><label for="reason">เหตุผล <span class="req">*</span></label><textarea id="reason" placeholder="เช่น ใช้ห้องจัดงานของบริษัท"></textarea></div>
+            <div class="alert alert-warn small">ในฐานะแอดมิน การยกเลิกจะมีผลทันที และระบบจะส่งอีเมลแจ้งไปที่ ${esc(b.email)}</div>
+            <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button><button class="btn btn-danger" id="ok">ยืนยันยกเลิก</button></div>`, (el, close) => {
+            el.querySelector('#ok').addEventListener('click', () => {
+              const reason = el.querySelector('#reason').value.trim();
+              if (!reason) return M.toast('กรุณาระบุเหตุผล', 'err');
+              M.adminCancel(b.id, reason, admin); close(); M.renderTopbar('bookings'); render();
+              M.toast('ยกเลิกการจองแล้ว · ส่งอีเมลแจ้งผู้จองแล้ว');
+            });
+          });
+        }
+      });
+      $('#export').addEventListener('click', () => {
+        const rows = [['รหัส', 'ห้อง', 'วันที่', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'ชื่อผู้จอง', 'แผนก', 'เบอร์โทร', 'อีเมล', 'วัตถุประสงค์', 'ผู้เข้าร่วม', 'สถานะ', 'วันที่ทำรายการ', 'เหตุผลยกเลิก', 'ยกเลิกโดย']];
+        filtered().forEach((b) => rows.push([b.code, M.room(b.roomId).name, b.date, b.start, b.end, b.name, b.department, b.phone, b.email, b.purpose, b.attendees || '', M.STATUS[b.status].label, M.fmtDateTime(b.createdAt), b.cancelReason || '', b.cancelledBy || '']));
+        M.downloadCSV(`bookings-${M.today()}.csv`, rows);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>การจองของฉัน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>การจองของฉัน</h1><div class="muted">ดูรายการจอง ขอยกเลิก และประวัติการจองย้อนหลัง</div></div>
+      <a class="btn" href="booking.html">+ จองห้องประชุม</a>
+    </div>
+
+    <section class="grid grid-3" style="margin-bottom:20px" id="kpis"></section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="segmented" id="tabs">
+          <button data-tab="upcoming" class="active">กำลังจะถึง</button>
+          <button data-tab="past">ประวัติ / ผ่านไปแล้ว</button>
+          <button data-tab="cancelled">ยกเลิกแล้ว</button>
+        </div>
+        <input class="input" id="search" placeholder="ค้นหา รหัส / วัตถุประสงค์" style="max-width:260px">
+      </div>
+      <div class="alert alert-warn small">การขอยกเลิกจะต้องรอผู้ดูแลระบบ <b>อนุมัติ</b> ระหว่างรออนุมัติ ห้องยังถูกกันไว้ให้ท่าน · เมื่อยกเลิกสำเร็จจะได้รับอีเมลแจ้ง</div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>รหัส</th><th>วัน-เวลา</th><th>ห้อง</th><th>วัตถุประสงค์</th><th>สถานะ</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </section>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, $$, esc } = M;
+      let user;
+      try { user = M.requireUser(); } catch (e) { return; }
+      M.renderTopbar('mine');
+      let tab = 'upcoming';
+
+      const mine = () => M.data.bookings.filter((b) => b.userId === user.id);
+      const isPast = (b) => b.date < M.today() || (b.date === M.today() && M.toMin(b.end) <= M.nowMin());
+
+      function render() {
+        const all = mine();
+        const upcoming = all.filter((b) => b.status !== 'cancelled' && !isPast(b));
+        const tmr = M.iso(M.addDays(new Date(), 1));
+        $('#kpis').innerHTML = `
+          <div class="card kpi"><span class="label">การจองที่กำลังจะถึง</span><span class="value">${upcoming.length}</span></div>
+          <div class="card kpi"><span class="label">รออนุมัติยกเลิก</span><span class="value" style="color:#9a6b07">${all.filter((b) => b.status === 'cancel_requested').length}</span></div>
+          <div class="card kpi"><span class="label">การจองทั้งหมด</span><span class="value">${all.length}</span></div>`;
+
+        const q = $('#search').value.trim().toLowerCase();
+        let list = tab === 'upcoming' ? upcoming : tab === 'cancelled' ? all.filter((b) => b.status === 'cancelled') : all.filter((b) => b.status !== 'cancelled' && isPast(b));
+        if (q) list = list.filter((b) => (b.code + b.purpose).toLowerCase().includes(q));
+        list.sort((a, b) => (tab === 'upcoming' ? 1 : -1) * (a.date + a.start).localeCompare(b.date + b.start));
+
+        $('#rows').innerHTML = list.length ? list.map((b) => `
+          <tr>
+            <td><b>${b.code}</b></td>
+            <td>${M.fmtDate(b.date)}<div class="muted small">${b.start}–${b.end} น.${b.date === tmr && b.status === 'confirmed' ? ' · <span style="color:var(--green-700)">พรุ่งนี้</span>' : ''}</div></td>
+            <td>${esc(M.room(b.roomId).name)}</td>
+            <td>${esc(b.purpose)}</td>
+            <td>${M.statusPill(b.status)}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-ghost" data-view="${b.id}">รายละเอียด</button>
+              ${b.status === 'confirmed' && !isPast(b) ? `<button class="btn btn-sm btn-danger" data-cancel="${b.id}">ขอยกเลิก</button>` : ''}
+            </td>
+          </tr>`).join('') : `<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">ไม่มีรายการ</td></tr>`;
+      }
+
+      $('#tabs').addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        tab = b.dataset.tab; $$('#tabs button').forEach((x) => x.classList.toggle('active', x === b)); render();
+      });
+      $('#search').addEventListener('input', render);
+      $('#rows').addEventListener('click', (e) => {
+        const v = e.target.closest('[data-view]'), c = e.target.closest('[data-cancel]');
+        if (v) M.modal(M.bookingDetailHTML(M.data.bookings.find((b) => b.id === Number(v.dataset.view))));
+        if (c) openCancel(Number(c.dataset.cancel));
+      });
+
+      function openCancel(id) {
+        const b = M.data.bookings.find((x) => x.id === id);
+        M.modal(`
+          <h2>ขอยกเลิกการจอง ${b.code}</h2>
+          <p class="muted" style="margin-top:0">${esc(M.room(b.roomId).name)} · ${M.fmtDateLong(b.date)} · ${b.start}–${b.end} น.</p>
+          <div class="field"><label for="reason">เหตุผลในการยกเลิก <span class="req">*</span></label><textarea id="reason" placeholder="เช่น เลื่อนการประชุม"></textarea></div>
+          <div class="alert alert-warn small">คำขอจะถูกส่งให้ผู้ดูแลระบบอนุมัติ และจะแจ้งผลทางอีเมล</div>
+          <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button><button class="btn btn-danger" id="confirmCancel">ส่งคำขอยกเลิก</button></div>`,
+          (el, close) => {
+            el.querySelector('#confirmCancel').addEventListener('click', () => {
+              const reason = el.querySelector('#reason').value.trim();
+              if (!reason) { el.querySelector('#reason').focus(); return M.toast('กรุณาระบุเหตุผล', 'err'); }
+              M.requestCancel(id, reason, user); close(); render();
+              M.toast('ส่งคำขอยกเลิกแล้ว รอผู้ดูแลระบบอนุมัติ');
+            });
+          });
+      }
+
+      render();
+      const open = Number(M.qs('cancel'));
+      if (open) openCancel(open);
+    })();
+  </script>
+</body>
+</html>

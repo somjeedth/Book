@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>จัดการห้องประชุม</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>จัดการห้องประชุม</h1><div class="muted">แก้ไขความจุ สิ่งอำนวยความสะดวก และเปิด/ปิดการจองของแต่ละห้อง</div></div>
+    </div>
+    <section class="grid grid-2" id="rooms"></section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, $$, esc } = M;
+      let admin;
+      try { admin = M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('rooms');
+      function render() {
+        const td = M.today();
+        $('#rooms').innerHTML = M.data.rooms.map((r) => {
+          const upcoming = M.activeBookings().filter((b) => b.roomId === r.id && b.date >= td).length;
+          return `<div class="card room-card ${r.open ? '' : 'off'}">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+              <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">${esc(r.floor)} · ${esc(r.note || '')}</div></div>
+              ${r.open ? '<span class="pill pill-free">เปิดให้จอง</span>' : '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>'}
+            </div>
+            <dl class="kv"><dt>ความจุ</dt><dd>${esc(r.capacityLabel)} (สูงสุด ${r.capacity} คน)</dd><dt>การจองที่กำลังจะถึง</dt><dd>${upcoming} รายการ</dd></dl>
+            <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
+            <div style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" data-edit="${r.id}">แก้ไขข้อมูลห้อง</button>
+              <button class="btn btn-sm ${r.open ? 'btn-ghost' : ''}" data-toggle="${r.id}">${r.open ? 'ปิดการจอง' : 'เปิดให้จอง'}</button></div>
+          </div>`;
+        }).join('');
+      }
+      $('#rooms').addEventListener('click', (e) => {
+        const t = e.target.closest('[data-toggle]'), ed = e.target.closest('[data-edit]');
+        if (t) {
+          const r = M.room(t.dataset.toggle);
+          if (!confirm(`${r.open ? 'ปิด' : 'เปิด'}การจอง ${r.name}?`)) return;
+          M.updateRoom(r.id, { open: !r.open }, admin); render(); M.toast(`${r.name}: ${r.open ? 'เปิดให้จองแล้ว' : 'ปิดการจองแล้ว'}`);
+        }
+        if (ed) {
+          const r = M.room(ed.dataset.edit);
+          M.modal(`<h2>แก้ไข ${esc(r.name)}</h2>
+            <div class="field"><label for="n">ชื่อห้อง</label><input class="input" id="n" value="${esc(r.name)}"></div>
+            <div class="row">
+              <div class="field"><label for="c">ความจุสูงสุด (คน)</label><input class="input" type="number" id="c" min="1" value="${r.capacity}"></div>
+              <div class="field"><label for="cl">ข้อความแสดงความจุ</label><input class="input" id="cl" value="${esc(r.capacityLabel)}"></div>
+            </div>
+            <div class="field"><label for="fl">ที่ตั้ง</label><input class="input" id="fl" value="${esc(r.floor)}"></div>
+            <div class="field"><label>สิ่งอำนวยความสะดวก</label>${M.AMENITIES.map((a) => `<label class="check"><input type="checkbox" value="${esc(a)}" ${r.amenities.includes(a) ? 'checked' : ''}> ${esc(a)}</label>`).join('')}</div>
+            <label class="check"><input type="checkbox" id="op" ${r.open ? 'checked' : ''}> เปิดให้จอง</label>
+            <div class="foot"><button class="btn btn-ghost" data-close>ยกเลิก</button><button class="btn" id="save">บันทึก</button></div>`, (el, close) => {
+            el.querySelector('#save').addEventListener('click', () => {
+              const cap = Number(el.querySelector('#c').value);
+              if (!el.querySelector('#n').value.trim() || !cap) return M.toast('กรุณากรอกข้อมูลให้ครบ', 'err');
+              M.updateRoom(r.id, {
+                name: el.querySelector('#n').value.trim(), capacity: cap, capacityLabel: el.querySelector('#cl').value.trim() || cap + ' คน',
+                floor: el.querySelector('#fl').value.trim(), open: el.querySelector('#op').checked,
+                amenities: $$('input[type=checkbox][value]', el).filter((i) => i.checked).map((i) => i.value),
+              }, admin);
+              close(); render(); M.toast('บันทึกข้อมูลห้องแล้ว');
+            });
+          });
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

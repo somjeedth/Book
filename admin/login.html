@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เข้าสู่ระบบแอดมิน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <div class="auth-wrap">
+    <section class="auth-hero admin">
+      <a class="brand" href="../index.html"><span class="logo">MR</span><span>ระบบจองห้องประชุม · Admin</span></a>
+      <div>
+        <h1>ระบบผู้ดูแล<br>ห้องประชุม</h1>
+        <ul>
+          <li>Dashboard ภาพรวมการใช้ห้องประชุม</li>
+          <li>อนุมัติ / ปฏิเสธคำขอยกเลิกการจอง</li>
+          <li>ตรวจสอบประวัติการจองย้อนหลังอย่างละเอียด</li>
+          <li>จัดการห้องประชุม และเปิด/ปิดการจอง</li>
+        </ul>
+      </div>
+      <div class="small" style="opacity:.8">สำหรับเจ้าหน้าที่ผู้ดูแลระบบเท่านั้น</div>
+    </section>
+    <section class="auth-form">
+      <div class="box">
+        <h2>เข้าสู่ระบบผู้ดูแลระบบ</h2>
+        <p class="muted small" style="margin-top:0">กรุณาเข้าสู่ระบบด้วยบัญชีแอดมิน</p>
+        <div id="err" class="alert alert-err hidden"></div>
+        <form id="f" novalidate>
+          <div class="field"><label for="email">อีเมล</label><input class="input" type="email" id="email" autocomplete="username"></div>
+          <div class="field"><label for="pass">รหัสผ่าน</label><input class="input" type="password" id="pass" autocomplete="current-password"></div>
+          <button class="btn btn-block" type="submit">เข้าสู่ระบบแอดมิน</button>
+        </form>
+        <div class="alert alert-warn small" style="margin-top:16px">บัญชีทดลอง: <b>admin@company.co.th</b> / <b>admin1234</b>
+          <button type="button" class="btn btn-sm btn-ghost" id="fillDemo" style="margin-left:6px">กรอกให้</button></div>
+        <div class="switch-link"><a href="../login.html">← เข้าสู่ระบบสำหรับผู้จอง</a></div>
+      </div>
+    </section>
+  </div>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $ } = M;
+      $('#fillDemo').addEventListener('click', () => { $('#email').value = 'admin@company.co.th'; $('#pass').value = 'admin1234'; });
+      $('#f').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const r = M.login($('#email').value, $('#pass').value, 'admin');
+        if (!r.ok) { $('#err').textContent = r.error; $('#err').classList.remove('hidden'); return; }
+        location.href = 'dashboard.html';
+      });
+    })();
+  </script>
+</body>
+</html>

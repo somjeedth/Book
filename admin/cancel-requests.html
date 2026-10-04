@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>คำขอยกเลิกการจอง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../">
+  <main class="container">
+    <div class="page-head">
+      <div><h1>คำขอยกเลิกการจอง</h1><div class="muted">อนุมัติหรือปฏิเสธคำขอยกเลิกจากผู้จอง ระบบจะส่งอีเมลแจ้งผลให้อัตโนมัติ</div></div>
+    </div>
+    <section class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2 style="margin:0">รออนุมัติ</h2><span class="pill pill-warn" id="pcount"></span></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>รหัส</th><th>วัน-เวลาที่จอง</th><th>ผู้จอง / แผนก</th><th>วัตถุประสงค์</th><th>เหตุผลที่ขอยกเลิก</th><th>ขอเมื่อ</th><th></th></tr></thead>
+        <tbody id="pending"></tbody>
+      </table></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2 style="margin:0">ดำเนินการแล้ว</h2></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>วันที่ดำเนินการ</th><th>รหัส</th><th>ผลการพิจารณา</th><th>ผู้ดำเนินการ</th><th>รายละเอียด</th></tr></thead>
+        <tbody id="done"></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script src="../assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      let admin;
+      try { admin = M.requireAdmin(); } catch (e) { return; }
+      M.renderTopbar('requests');
+      function render() {
+        const p = M.data.bookings.filter((b) => b.status === 'cancel_requested').sort((a, b) => a.cancelRequestedAt - b.cancelRequestedAt);
+        $('#pcount').textContent = p.length + ' รายการ';
+        $('#pending').innerHTML = p.length ? p.map((b) => `
+          <tr>
+            <td><b>${b.code}</b><div class="muted small">${esc(M.room(b.roomId).name)}</div></td>
+            <td>${M.fmtDate(b.date)}<div class="muted small">${b.start}–${b.end} น.</div></td>
+            <td>${esc(b.name)}<div class="muted small">${esc(b.department)} · ${esc(b.phone)}</div></td>
+            <td>${esc(b.purpose)}</td>
+            <td>${esc(b.cancelReason)}</td>
+            <td class="small">${M.fmtDateTime(b.cancelRequestedAt)}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-ghost" data-view="${b.id}">ดู</button>
+              <button class="btn btn-sm" data-approve="${b.id}">อนุมัติ</button>
+              <button class="btn btn-sm btn-outline" data-reject="${b.id}">ปฏิเสธ</button>
+            </td>
+          </tr>`).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">ไม่มีคำขอที่รออนุมัติ 🎉</td></tr>';
+        const done = M.data.logs.filter((l) => l.action === 'cancel_approved' || l.action === 'cancel_rejected').sort((a, b) => b.ts - a.ts).slice(0, 50);
+        $('#done').innerHTML = done.map((l) => `
+          <tr><td class="small">${M.fmtDateTime(l.ts)}</td><td><b>${l.code}</b></td>
+          <td>${l.action === 'cancel_approved' ? '<span class="pill pill-busy">อนุมัติยกเลิก</span>' : '<span class="pill pill-free">ปฏิเสธ (คงการจอง)</span>'}</td>
+          <td>${esc(l.actorName)}</td><td class="small">${esc(l.snapshot.name)} · ${M.fmtDate(l.snapshot.date)} ${l.snapshot.start}–${l.snapshot.end}</td></tr>`).join('');
+      }
+      $('#pending').addEventListener('click', (e) => {
+        const v = e.target.closest('[data-view]'), a = e.target.closest('[data-approve]'), r = e.target.closest('[data-reject]');
+        if (v) M.modal(M.bookingDetailHTML(M.data.bookings.find((b) => b.id === Number(v.dataset.view))));
+        if (a) {
+          const b = M.data.bookings.find((x) => x.id === Number(a.dataset.approve));
+          M.modal(`<h2>อนุมัติการยกเลิก ${b.code}?</h2><p>${esc(b.name)} · ${M.fmtDateLong(b.date)} ${b.start}–${b.end} น.</p>
+            <div class="alert alert-warn small">ห้องจะว่างและเปิดให้ผู้อื่นจองได้ทันที ระบบจะส่งอีเมลแจ้งไปที่ ${esc(b.email)}</div>
+            <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button><button class="btn" id="ok">อนุมัติ</button></div>`, (el, close) => {
+            el.querySelector('#ok').addEventListener('click', () => { M.approveCancel(b.id, admin); close(); M.renderTopbar('requests'); render(); M.toast('อนุมัติการยกเลิกแล้ว · ส่งอีเมลแจ้งผู้จองแล้ว'); });
+          });
+        }
+        if (r) {
+          const b = M.data.bookings.find((x) => x.id === Number(r.dataset.reject));
+          M.modal(`<h2>ปฏิเสธคำขอยกเลิก ${b.code}</h2>
+            <div class="field"><label for="note">หมายเหตุถึงผู้จอง</label><textarea id="note" placeholder="(ไม่บังคับ)"></textarea></div>
+            <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button><button class="btn btn-danger" id="ok">ปฏิเสธคำขอ</button></div>`, (el, close) => {
+            el.querySelector('#ok').addEventListener('click', () => { M.rejectCancel(b.id, el.querySelector('#note').value.trim(), admin); close(); M.renderTopbar('requests'); render(); M.toast('ปฏิเสธคำขอแล้ว · ส่งอีเมลแจ้งผู้จองแล้ว'); });
+          });
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

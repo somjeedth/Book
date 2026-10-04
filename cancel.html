@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ยกเลิกการจอง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container" style="max-width:640px">
+    <div class="card" id="box"></div>
+  </main>
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      M.renderTopbar('');
+      const b = M.data.bookings.find((x) => x.token === M.qs('token'));
+      const box = $('#box');
+      if (!b) { box.innerHTML = '<h2>ไม่พบรายการจอง</h2><p class="muted">ลิงก์อาจไม่ถูกต้องหรือหมดอายุแล้ว</p>'; return; }
+      function render(msg) {
+        const r = M.room(b.roomId);
+        box.innerHTML = `
+          <h1>ยกเลิกการจองห้องประชุม</h1>
+          ${msg || ''}
+          <dl class="kv" style="margin:14px 0">
+            <dt>รหัสการจอง</dt><dd><b>${b.code}</b> ${M.statusPill(b.status)}</dd>
+            <dt>ห้อง</dt><dd>${esc(r.name)}</dd>
+            <dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
+            <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
+            <dt>ผู้จอง</dt><dd>${esc(b.name)} (${esc(b.department)})</dd>
+            <dt>วัตถุประสงค์</dt><dd>${esc(b.purpose)}</dd>
+          </dl>
+          ${b.status === 'confirmed' ? `
+            <div class="field"><label for="reason">เหตุผลในการยกเลิก <span class="req">*</span></label><textarea id="reason" placeholder="เช่น ไม่ได้ใช้ห้องแล้ว"></textarea></div>
+            <div class="alert alert-warn small">คำขอยกเลิกจะถูกส่งให้ผู้ดูแลระบบอนุมัติ และแจ้งผลทางอีเมล</div>
+            <div style="display:flex;gap:8px;justify-content:flex-end"><a class="btn btn-ghost" href="index.html">ยังต้องการใช้ห้อง</a><button class="btn btn-danger" id="go">ยืนยันขอยกเลิก</button></div>`
+          : b.status === 'cancel_requested' ? '<div class="alert alert-warn">ส่งคำขอยกเลิกแล้ว กำลังรอผู้ดูแลระบบอนุมัติ</div>'
+          : '<div class="alert alert-ok">รายการนี้ถูกยกเลิกเรียบร้อยแล้ว</div>'}`;
+        const go = $('#go');
+        if (go) go.addEventListener('click', () => {
+          const reason = $('#reason').value.trim();
+          if (!reason) return M.toast('กรุณาระบุเหตุผล', 'err');
+          M.requestCancel(b.id, reason, { name: b.name, role: 'user' });
+          render('<div class="alert alert-ok">ส่งคำขอยกเลิกเรียบร้อย ระบบจะแจ้งผลการอนุมัติทางอีเมล</div>');
+        });
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
