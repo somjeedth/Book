@@ -161,7 +161,9 @@
     return DATA;
   }
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); } catch (e) { /* ignore */ } }
-  function reset() { localStorage.removeItem(STORE_KEY); localStorage.removeItem(SESSION_KEY); location.reload(); }
+  function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
+  function storeDel(k) { try { localStorage.removeItem(k); } catch (e) { /* storage unavailable */ } }
+  function reset() { storeDel(STORE_KEY); storeDel(SESSION_KEY); location.reload(); }
 
   /* ---------------- logs & emails ---------------- */
   const LOG_LABEL = {
@@ -207,17 +209,17 @@
     const u = DATA.users.find((x) => x.email.toLowerCase() === String(email).trim().toLowerCase() && x.password === password);
     if (!u) return { ok: false, error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' };
     if (role === 'admin' && u.role !== 'admin') return { ok: false, error: 'บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ' };
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: u.id }));
+    storeSet(SESSION_KEY, JSON.stringify({ userId: u.id }));
     return { ok: true, user: u };
   }
   function register(o) {
     if (DATA.users.some((u) => u.email.toLowerCase() === o.email.toLowerCase())) return { ok: false, error: 'อีเมลนี้ถูกใช้งานแล้ว' };
     const u = { id: Math.max(...DATA.users.map((x) => x.id)) + 1, role: 'user', ...o };
     DATA.users.push(u); save();
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: u.id }));
+    storeSet(SESSION_KEY, JSON.stringify({ userId: u.id }));
     return { ok: true, user: u };
   }
-  function logout(to) { localStorage.removeItem(SESSION_KEY); location.href = to || ROOT + 'login.html'; }
+  function logout(to) { storeDel(SESSION_KEY); location.href = to || ROOT + 'login.html'; }
   function requireUser() {
     const u = currentUser();
     if (!u) { location.href = ROOT + 'login.html?next=' + encodeURIComponent(location.pathname.split('/').pop() + location.search); throw new Error('redirect'); }
@@ -360,6 +362,27 @@
     return close;
   }
 
+  /** กล่องยืนยันในหน้า (ใช้แทน window.confirm) */
+  function confirmBox(title, text, okLabel, onOk) {
+    modal(`<h2>${esc(title)}</h2>${text ? `<p class="muted">${esc(text)}</p>` : ''}
+      <div class="foot"><button class="btn btn-ghost" data-close>ยกเลิก</button><button class="btn" id="cbOk">${esc(okLabel || 'ยืนยัน')}</button></div>`,
+      (el, close) => el.querySelector('#cbOk').addEventListener('click', () => { close(); onOk(); }));
+  }
+
+  /** ส่งออก CSV: พยายามดาวน์โหลด และแสดงข้อมูลให้คัดลอกไปวางใน Excel ได้ด้วย */
+  function exportCSVModal(filename, csv) {
+    modal(`<h2>ส่งออกข้อมูล CSV</h2>
+      <p class="muted small" style="margin-top:0">ถ้าไฟล์ <b>${esc(filename)}</b> ไม่ถูกดาวน์โหลดอัตโนมัติ ให้กดคัดลอกแล้ววางใน Excel / Google Sheets</p>
+      <textarea id="csvText" readonly style="min-height:200px;font-size:.78rem;font-family:ui-monospace,monospace">${esc(csv)}</textarea>
+      <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button><button class="btn" id="csvCopy">คัดลอก</button></div>`,
+      (el) => el.querySelector('#csvCopy').addEventListener('click', () => {
+        const ta = el.querySelector('#csvText');
+        const fallback = () => { ta.focus(); ta.select(); toast('เลือกข้อความแล้ว กด Ctrl+C เพื่อคัดลอก', ''); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(() => toast('คัดลอกแล้ว'), fallback);
+        else fallback();
+      }));
+  }
+
   function bookingDetailHTML(b, opts) {
     const r = room(b.roomId);
     const logs = DATA.logs.filter((l) => l.bookingId === b.id).sort((a, c) => a.ts - c.ts);
@@ -464,7 +487,7 @@
     document.body.insertAdjacentHTML('afterbegin', html);
     const lo = $('#logoutBtn');
     if (lo) lo.addEventListener('click', (e) => { e.preventDefault(); logout(isAdmin ? ROOT + 'admin/login.html' : ROOT + 'login.html'); });
-    $('#resetMock').addEventListener('click', (e) => { e.preventDefault(); if (confirm('รีเซ็ตข้อมูลตัวอย่างทั้งหมด?')) reset(); });
+    $('#resetMock').addEventListener('click', (e) => { e.preventDefault(); confirmBox('รีเซ็ตข้อมูลตัวอย่างทั้งหมด?', 'ข้อมูลการจองที่ทดลองทำไว้จะถูกล้าง และสร้างข้อมูลตัวอย่างใหม่', 'รีเซ็ต', reset); });
   }
 
   function downloadCSV(filename, rows) {
@@ -485,6 +508,6 @@
     currentUser, login, register, logout, requireUser, requireAdmin,
     room, activeBookings, bookingsOn, findConflicts, validateBooking, createBooking,
     requestCancel, approveCancel, rejectCancel, adminCancel, runReminders, updateRoom,
-    esc, $, $$, statusPill, qs, toast, modal, bookingDetailHTML, renderEmail, renderTopbar, downloadCSV,
+    esc, $, $$, statusPill, qs, toast, modal, confirmBox, bookingDetailHTML, renderEmail, renderTopbar, downloadCSV,
   };
 })();

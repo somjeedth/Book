@@ -1,6 +1,7 @@
 /* ระบบจองห้องประชุม — Mock UI
    สีหลัก: #49A35A  |  ฟอนต์: IBM Plex Sans Thai */
 :root {
+  color-scheme: light;
   --green: #49a35a;
   --green-600: #3c8a4b;
   --green-700: #2f6f3c;
@@ -43,7 +44,7 @@ h3 { font-size: 1.05rem; }
 .topbar {
   background: var(--green);
   color: #fff;
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 .topbar .inner {

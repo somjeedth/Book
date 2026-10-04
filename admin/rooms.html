@@ -42,8 +42,9 @@
         const t = e.target.closest('[data-toggle]'), ed = e.target.closest('[data-edit]');
         if (t) {
           const r = M.room(t.dataset.toggle);
-          if (!confirm(`${r.open ? 'ปิด' : 'เปิด'}การจอง ${r.name}?`)) return;
-          M.updateRoom(r.id, { open: !r.open }, admin); render(); M.toast(`${r.name}: ${r.open ? 'เปิดให้จองแล้ว' : 'ปิดการจองแล้ว'}`);
+          M.confirmBox(`${r.open ? 'ปิด' : 'เปิด'}การจอง ${r.name}?`, r.open ? 'ผู้ใช้จะไม่สามารถจองห้องนี้ได้ (การจองเดิมยังคงอยู่)' : 'ผู้ใช้จะสามารถจองห้องนี้ได้ทันที', r.open ? 'ปิดการจอง' : 'เปิดให้จอง', () => {
+            M.updateRoom(r.id, { open: !r.open }, admin); render(); M.toast(`${r.name}: ${r.open ? 'เปิดให้จองแล้ว' : 'ปิดการจองแล้ว'}`);
+          });
         }
         if (ed) {
           const r = M.room(ed.dataset.edit);
