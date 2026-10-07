@@ -38,7 +38,7 @@
         <h2 style="margin-top:8px">2. ข้อมูลผู้จอง</h2>
         <div class="row">
           <div class="field"><label for="name">ชื่อผู้จอง <span class="req">*</span></label><input class="input" id="name" required></div>
-          <div class="field"><label for="department">แผนก <span class="req">*</span></label><input class="input" id="department" list="deptList" placeholder="พิมพ์ชื่อแผนก" required><datalist id="deptList"></datalist></div>
+          <div class="field"><label for="department">แผนก <span class="req">*</span></label><input class="input" id="department" placeholder="พิมพ์ชื่อแผนก" autocomplete="off" required></div>
         </div>
         <div class="row">
           <div class="field"><label for="phone">เบอร์โทรศัพท์ <span class="req">*</span></label><input class="input" id="phone" placeholder="081-234-5678" required></div>
@@ -96,7 +96,6 @@
           <div class="amenities" style="margin:6px 0">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
           <div>${r.open ? '<span class="pill pill-free">เปิดให้จอง</span>' : '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>'}</div>
         </label>`).join('');
-      $('#deptList').innerHTML = M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('');
       $('#start').innerHTML = M.timeOptions(false).map((t) => `<option>${t}</option>`).join('');
       $('#end').innerHTML = M.timeOptions(true).map((t) => `<option>${t}</option>`).join('');
 

@@ -74,7 +74,7 @@
           <div id="formErr" class="alert alert-err hidden"></div>
           <div class="row">
             <div class="field"><label for="aName">ชื่อ-นามสกุล <span class="req">*</span></label><input class="input" id="aName" value="${esc(u ? u.name : '')}"></div>
-            <div class="field"><label for="aDept">แผนก</label><input class="input" id="aDept" list="aDeptList" value="${esc(u ? u.department : '')}"><datalist id="aDeptList">${M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('')}</datalist></div>
+            <div class="field"><label for="aDept">แผนก</label><input class="input" id="aDept" value="${esc(u ? u.department : '')}" placeholder="พิมพ์ชื่อแผนก" autocomplete="off"></div>
           </div>
           <div class="row">
             <div class="field"><label for="aEmail">อีเมล <span class="req">*</span></label><input class="input" type="email" id="aEmail" value="${esc(u ? u.email : '')}"></div>
