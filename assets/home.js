@@ -100,21 +100,19 @@
     $('#roomCards').innerHTML = visibleRooms().map((r) => {
       const todays = M.bookingsOn(td, r.id).sort((a, b) => a.start.localeCompare(b.start));
       const cur = todays.find((b) => M.toMin(b.start) <= now && now < M.toMin(b.end));
-      const next = todays.find((b) => M.toMin(b.start) > now);
-      let cls = '', nowTxt, sub;
-      if (!r.open) { cls = 'off'; nowTxt = 'ยังไม่เปิดให้จอง'; sub = 'จะเปิดให้จองเร็ว ๆ นี้'; }
-      else if (cur) { cls = 'busy'; nowTxt = 'ไม่ว่าง'; sub = `ไม่ว่าง ${cur.start}–${cur.end} น.${isAdmin ? ' · ' + esc(cur.department) : isMine(cur) ? ' · การจองของคุณ' : ''}`; }
-      else { nowTxt = 'ว่าง'; sub = next ? `ว่างถึง ${next.start} น.` : 'ว่างตลอดช่วงที่เหลือของวันนี้'; }
+      let cls = '', nowTxt;
+      if (!r.open) { cls = 'off'; nowTxt = 'ยังไม่เปิดให้จอง'; }
+      else if (cur) { cls = 'busy'; nowTxt = 'ไม่ว่าง'; }
+      else { nowTxt = 'ว่าง'; }
       const dim = roomMatches(r) ? '' : ' dim';
       return `<div class="card room-card ${cls}${dim}">
         <img class="room-photo" src="assets/img/meeting-room.jpg" alt="">
         <div class="room-body">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
             <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">ห้องประชุม ${esc(r.capacityLabel)}</div><div class="muted small">📍 ${esc(r.floor)}</div></div>
-            <div><div class="now">● ${nowTxt}</div><div class="muted small">${sub}</div></div>
+            <div class="now">● ${nowTxt}</div>
           </div>
           <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
-          <div class="muted small">วันนี้มีการจอง ${todays.length} รายการ${todays.length ? ': ' + todays.map((b) => `${b.start}-${b.end}`).join(', ') : ''}</div>
           ${r.open ? `<div><a class="btn btn-sm" href="booking.html?room=${r.id}">จองห้องนี้</a></div>` : ''}
         </div>
       </div>`;
