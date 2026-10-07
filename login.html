@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>เข้าสู่ระบบผู้จอง</title>
+  <title>เข้าสู่ระบบ · จองห้องประชุมสำนักการเงิน</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
@@ -11,13 +11,14 @@
 <body data-root="">
   <div class="auth-wrap">
     <section class="auth-hero">
-      <a class="brand" href="index.html"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span><span>จองห้องประชุมสำนักการเงิน</span></a>
       <div>
         <h1>จองห้องประชุมได้ง่าย ๆ<br>ในไม่กี่คลิก</h1>
         <ul>
           <li>ดูสถานะห้องว่าง / ไม่ว่าง แบบรายวัน สัปดาห์ เดือน</li>
           <li>ระบบป้องกันการจองเวลาซ้อนกัน</li>
           <li>รับอีเมลยืนยัน และแจ้งเตือนก่อนใช้ห้อง 1 วัน</li>
+          <li>จองได้ทันทีโดยไม่ต้องสมัครสมาชิก ใช้รหัสยืนยันจัดการการจอง</li>
         </ul>
       </div>
     </section>
@@ -42,7 +43,7 @@
         <form id="regForm" class="hidden" novalidate>
           <h2>สมัครสมาชิก</h2>
           <div class="field"><label for="rName">ชื่อ-นามสกุล <span class="req">*</span></label><input class="input" id="rName"></div>
-          <div class="field"><label for="rDept">แผนก <span class="req">*</span></label><select id="rDept"></select></div>
+          <div class="field"><label for="rDept">แผนก <span class="req">*</span></label><input class="input" id="rDept" list="rDeptList" placeholder="พิมพ์ชื่อแผนกของคุณ"><datalist id="rDeptList"></datalist></div>
           <div class="row">
             <div class="field"><label for="rPhone">เบอร์โทรศัพท์ <span class="req">*</span></label><input class="input" id="rPhone" placeholder="081-234-5678"></div>
           </div>
@@ -51,6 +52,11 @@
           <button class="btn btn-block" type="submit">สมัครและเข้าสู่ระบบ</button>
         </form>
 
+        <div class="guest-box">
+          <b>ไม่อยากสมัครสมาชิก?</b>
+          <p class="muted small">จองได้เลยโดยไม่ต้องตั้งรหัสผ่าน ระบบจะให้ <b>รหัสยืนยันการจอง</b> ไว้ใช้ดูหรือยกเลิกการจอง</p>
+          <div class="row"><a class="btn btn-outline" href="booking.html">จองโดยไม่สมัครสมาชิก</a><a class="btn btn-ghost" href="manage.html">จัดการการจองด้วยรหัสยืนยัน</a></div>
+        </div>
         <div class="switch-link"><a href="admin/login.html">เข้าสู่ระบบสำหรับผู้ดูแลระบบ (Admin) →</a></div>
         <div class="switch-link" style="margin-top:6px"><a href="index.html">← ดูสถานะห้องโดยไม่เข้าสู่ระบบ</a></div>
       </div>
@@ -62,7 +68,7 @@
       const M = MRB, { $, $$ } = M;
       const next = M.qs('next') || 'index.html';
       const showErr = (m) => { const e = $('#err'); e.textContent = m; e.classList.toggle('hidden', !m); };
-      $('#rDept').innerHTML = '<option value="">-- เลือกแผนก --</option>' + M.DEPARTMENTS.map((d) => `<option>${d}</option>`).join('');
+      $('#rDeptList').innerHTML = M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('');
       $('#tabs').addEventListener('click', (e) => {
         const b = e.target.closest('button'); if (!b) return;
         $$('#tabs button').forEach((x) => x.classList.toggle('active', x === b));
@@ -79,7 +85,7 @@
       });
       $('#regForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const o = { name: $('#rName').value.trim(), department: $('#rDept').value, phone: $('#rPhone').value.trim(), email: $('#rEmail').value.trim(), password: $('#rPass').value };
+        const o = { name: $('#rName').value.trim(), department: $('#rDept').value.trim(), phone: $('#rPhone').value.trim(), email: $('#rEmail').value.trim(), password: $('#rPass').value };
         if (!o.name || !o.department || !o.phone || !o.email || !o.password) return showErr('กรุณากรอกข้อมูลให้ครบถ้วน');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.email)) return showErr('รูปแบบอีเมลไม่ถูกต้อง');
         if (o.password.length < 4) return showErr('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร');

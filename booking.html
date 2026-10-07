@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>จองห้องประชุม</title>
+  <title>จองห้องประชุม · สำนักการเงิน</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
@@ -18,6 +18,10 @@
     <div class="grid booking-layout" id="layout">
       <form class="card" id="form" novalidate>
         <div id="errors" class="alert alert-err hidden"></div>
+        <div id="guestNote" class="guest-banner hidden">
+          <div><b>จองได้เลย ไม่ต้องสมัครสมาชิก</b><div class="small">หลังจองสำเร็จ คุณจะได้ <b>รหัสยืนยันการจอง</b> 6 หลัก (ส่งไปทางอีเมลด้วย) ใช้คู่กับอีเมลเพื่อดูหรือยกเลิกการจองได้ภายหลัง</div></div>
+          <a class="btn btn-sm btn-outline" id="loginLink" href="login.html">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
+        </div>
 
         <h2>1. เลือกห้องและเวลา</h2>
         <div class="field">
@@ -34,7 +38,7 @@
         <h2 style="margin-top:8px">2. ข้อมูลผู้จอง</h2>
         <div class="row">
           <div class="field"><label for="name">ชื่อผู้จอง <span class="req">*</span></label><input class="input" id="name" required></div>
-          <div class="field"><label for="department">แผนก <span class="req">*</span></label><input class="input" id="department" list="deptList" required><datalist id="deptList"></datalist></div>
+          <div class="field"><label for="department">แผนก <span class="req">*</span></label><input class="input" id="department" list="deptList" placeholder="พิมพ์ชื่อแผนก" required><datalist id="deptList"></datalist></div>
         </div>
         <div class="row">
           <div class="field"><label for="phone">เบอร์โทรศัพท์ <span class="req">*</span></label><input class="input" id="phone" placeholder="081-234-5678" required></div>
@@ -70,9 +74,13 @@
   <script>
     (function () {
       const M = MRB, { $, $$, esc } = M;
-      let user;
-      try { user = M.requireUser(); } catch (e) { return; }
+      const user = M.currentUser();
+      const isAdmin = !!user && user.role === 'admin';
       M.renderTopbar('book');
+      if (!user) {
+        $('#guestNote').classList.remove('hidden');
+        $('#loginLink').href = 'login.html?next=' + encodeURIComponent('booking.html' + location.search);
+      }
 
       const rooms = M.data.rooms;
       let roomId = Number(M.qs('room')) || (rooms.find((r) => r.open) || {}).id;
@@ -85,6 +93,7 @@
             <b>${esc(r.name)}</b>
           </div>
           <div class="muted small">ความจุ ${esc(r.capacityLabel)} · ${esc(r.floor)}</div>
+          <div class="amenities" style="margin:6px 0">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
           <div>${r.open ? '<span class="pill pill-free">เปิดให้จอง</span>' : '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>'}</div>
         </label>`).join('');
       $('#deptList').innerHTML = M.DEPARTMENTS.map((d) => `<option value="${d}">`).join('');
@@ -97,7 +106,7 @@
       const qsStart = M.qs('start'), qsEnd = M.qs('end');
       if (qsStart) $('#start').value = qsStart; else $('#start').value = '09:00';
       if (qsEnd) $('#end').value = qsEnd; else $('#end').value = M.fromMin(M.toMin($('#start').value) + 60);
-      $('#name').value = user.name; $('#department').value = user.department; $('#phone').value = user.phone; $('#email').value = user.email;
+      if (user) { $('#name').value = user.name; $('#department').value = user.department; $('#phone').value = user.phone; $('#email').value = user.email; }
       if (M.qs('people')) $('#attendees').value = M.qs('people');
       $$('input[name=room]').forEach((i) => (i.checked = Number(i.value) === roomId));
 
@@ -133,7 +142,7 @@
           const sel = M.toMin(t) >= M.toMin(v.start) && M.toMin(t) < M.toMin(v.end);
           const past = v.date === M.today() && M.toMin(t) + M.SLOT_MIN <= M.nowMin();
           let cell;
-          if (b) cell = `<div class="slot busy ${b.start === t ? 'start' : ''}" style="${sel ? 'box-shadow:inset 0 0 0 3px #7a1f1f' : ''}">${b.start === t ? `${b.start}-${b.end} ${user.role === 'admin' ? esc(b.department) : b.userId === user.id ? 'การจองของคุณ' : 'ไม่ว่าง'}` : ''}</div>`;
+          if (b) cell = `<div class="slot busy ${b.start === t ? 'start' : ''}" style="${sel ? 'box-shadow:inset 0 0 0 3px #7a1f1f' : ''}">${b.start === t ? `${b.start}-${b.end} ${isAdmin ? esc(b.department) : user && b.userId === user.id ? 'การจองของคุณ' : 'ไม่ว่าง'}` : ''}</div>`;
           else if (past) cell = `<div class="slot off past"></div>`;
           else cell = `<div class="slot" data-time="${t}" style="${sel ? 'background:var(--green);color:#fff' : ''}">${sel ? 'ช่วงที่เลือก' : 'ว่าง'}</div>`;
           return `<div class="time">${t}</div>${cell}`;
@@ -154,7 +163,8 @@
 
       $('#form').addEventListener('submit', (e) => {
         e.preventDefault();
-        const res = M.createBooking(values(), user);
+        const v = values();
+        const res = M.createBooking(v, user || { id: null, name: v.name.trim() || 'ผู้จองทั่วไป', role: 'guest' });
         const box = $('#errors');
         if (!res.ok) {
           box.innerHTML = '<b>ไม่สามารถจองได้</b><ul style="margin:6px 0 0;padding-left:18px">' + res.errors.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
@@ -165,10 +175,15 @@
         const b = res.booking;
         M.modal(`
           <div style="text-align:center">
-            <div style="width:64px;height:64px;border-radius:50%;background:var(--green-50);color:var(--green);display:grid;place-items:center;margin:0 auto 10px;font-size:2rem">✓</div>
+            <div style="width:64px;height:64px;border-radius:50%;background:var(--green-50);color:var(--green-700);display:grid;place-items:center;margin:0 auto 10px;font-size:2rem">✓</div>
             <h2>จองห้องประชุมสำเร็จ</h2>
-            <p class="muted" style="margin-top:0">รหัสการจอง <b style="color:var(--ink)">${b.code}</b></p>
           </div>
+          <div class="ref-box">
+            <div class="small muted">รหัสยืนยันการจอง</div>
+            <div class="ref-code">${esc(b.ref)}</div>
+            <div class="small muted">เลขที่รายการ ${b.code}</div>
+          </div>
+          ${user ? '' : '<div class="alert alert-warn small">กรุณาเก็บรหัสยืนยันนี้ไว้ ใช้คู่กับอีเมล <b>' + esc(b.email) + '</b> เพื่อดูหรือยกเลิกการจองที่เมนู “จัดการการจอง”</div>'}
           <dl class="kv">
             <dt>ห้อง</dt><dd>${esc(M.room(b.roomId).name)}</dd>
             <dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
@@ -178,7 +193,7 @@
           <div class="alert alert-ok small" style="margin-top:14px">📧 ส่งอีเมลยืนยันไปที่ <b>${esc(b.email)}</b> แล้ว</div>
           <div class="foot">
             <a class="btn btn-ghost" href="email.html?id=${res.email.id}">ดูอีเมลยืนยัน</a>
-            <a class="btn btn-outline" href="my-bookings.html">การจองของฉัน</a>
+            ${user ? '<a class="btn btn-outline" href="my-bookings.html">การจองของฉัน</a>' : `<a class="btn btn-outline" href="manage.html?ref=${esc(b.ref)}">จัดการการจอง</a>`}
             <a class="btn" href="index.html?date=${b.date}">กลับหน้าแรก</a>
           </div>`);
       });

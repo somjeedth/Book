@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>จัดการการจอง · สำนักการเงิน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-root="">
+  <main class="container" style="max-width:720px">
+    <div class="page-head">
+      <div><h1>จัดการการจอง</h1><div class="muted">ดูหรือยกเลิกการจองด้วยรหัสยืนยัน ไม่ต้องเข้าสู่ระบบ</div></div>
+    </div>
+
+    <form class="card" id="findForm" novalidate style="margin-bottom:16px">
+      <div id="err" class="alert alert-err hidden"></div>
+      <div class="row">
+        <div class="field"><label for="ref">รหัสยืนยันการจอง <span class="req">*</span></label><input class="input ref-input" id="ref" maxlength="16" placeholder="เช่น K7M2QX" autocomplete="off"></div>
+        <div class="field" style="flex:1.4"><label for="email">อีเมลที่ใช้จอง <span class="req">*</span></label><input class="input" type="email" id="email" placeholder="name@company.co.th"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <span class="muted small">รหัสยืนยันอยู่ในหน้าจองสำเร็จ และในอีเมลยืนยันการจอง</span>
+        <button class="btn" type="submit">ค้นหาการจอง</button>
+      </div>
+      <div class="alert alert-warn small" style="margin:14px 0 0" id="demoHint"></div>
+    </form>
+
+    <section class="card hidden" id="result"></section>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    (function () {
+      const M = MRB, { $, esc } = M;
+      M.renderTopbar('manage');
+      const showErr = (m) => { $('#err').textContent = m; $('#err').classList.toggle('hidden', !m); };
+      const isPast = (b) => b.date < M.today() || (b.date === M.today() && M.toMin(b.end) <= M.nowMin());
+      let current = null;
+
+      // ตัวอย่างสำหรับทดลอง (mock)
+      const demo = M.data.bookings.filter((b) => b.status === 'confirmed' && !isPast(b))[0];
+      if (demo) {
+        $('#demoHint').innerHTML = `ทดลองใช้: รหัส <b>${esc(demo.ref)}</b> · อีเมล <b>${esc(demo.email)}</b> <button type="button" class="btn btn-sm btn-ghost" id="fillDemo">กรอกให้</button>`;
+        $('#fillDemo').addEventListener('click', () => { $('#ref').value = demo.ref; $('#email').value = demo.email; });
+      } else $('#demoHint').remove();
+
+      if (M.qs('ref')) $('#ref').value = M.qs('ref');
+
+      function render(msg) {
+        const b = current, r = M.room(b.roomId), box = $('#result');
+        box.classList.remove('hidden');
+        box.innerHTML = `${msg || ''}${M.bookingDetailHTML(b)}
+          ${b.status === 'confirmed' && !isPast(b) ? `
+            <hr style="border:0;border-top:1px solid var(--gray-100);margin:18px 0">
+            <h3>ขอยกเลิกการจอง</h3>
+            <div class="field"><label for="reason">เหตุผลในการยกเลิก <span class="req">*</span></label><textarea id="reason" placeholder="เช่น เลื่อนการประชุม"></textarea></div>
+            <div class="alert alert-warn small">คำขอจะถูกส่งให้ผู้ดูแลระบบอนุมัติ ระหว่างรออนุมัติห้องยังถูกกันไว้ให้ท่าน และจะแจ้งผลทางอีเมล</div>
+            <div style="display:flex;justify-content:flex-end"><button class="btn btn-danger" id="go">ส่งคำขอยกเลิก</button></div>`
+          : b.status === 'cancel_requested' ? '<div class="alert alert-warn" style="margin-top:14px">ส่งคำขอยกเลิกแล้ว กำลังรอผู้ดูแลระบบอนุมัติ</div>' : ''}`;
+        const go = $('#go');
+        if (go) go.addEventListener('click', () => {
+          const reason = $('#reason').value.trim();
+          if (!reason) { $('#reason').focus(); return M.toast('กรุณาระบุเหตุผล', 'err'); }
+          M.requestCancel(b.id, reason, { name: b.name, role: b.userId ? 'user' : 'guest' });
+          render('<div class="alert alert-ok">ส่งคำขอยกเลิกเรียบร้อย ระบบจะแจ้งผลการอนุมัติทางอีเมล</div>');
+        });
+      }
+
+      $('#findForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const ref = $('#ref').value.trim(), email = $('#email').value.trim();
+        if (!ref || !email) return showErr('กรุณากรอกรหัสยืนยันและอีเมล');
+        current = M.findByRef(ref, email);
+        if (!current) { $('#result').classList.add('hidden'); return showErr('ไม่พบการจอง กรุณาตรวจสอบรหัสยืนยันและอีเมลอีกครั้ง'); }
+        showErr(''); render();
+      });
+    })();
+  </script>
+</body>
+</html>

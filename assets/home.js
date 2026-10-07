@@ -107,12 +107,16 @@
       else { nowTxt = 'ว่าง'; sub = next ? `ว่างถึง ${next.start} น.` : 'ว่างตลอดช่วงที่เหลือของวันนี้'; }
       const dim = roomMatches(r) ? '' : ' dim';
       return `<div class="card room-card ${cls}${dim}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-          <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">${esc(r.floor)} · ความจุ ${esc(r.capacityLabel)}</div></div>
-          <div style="text-align:right"><div class="now">● ${nowTxt}</div><div class="muted small">${sub}</div></div>
+        <img class="room-photo" src="assets/img/meeting-room.jpg" alt="">
+        <div class="room-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">ห้องประชุม ${esc(r.capacityLabel)}</div><div class="muted small">📍 ${esc(r.floor)}</div></div>
+            <div><div class="now">● ${nowTxt}</div><div class="muted small">${sub}</div></div>
+          </div>
+          <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
+          <div class="muted small">วันนี้มีการจอง ${todays.length} รายการ${todays.length ? ': ' + todays.map((b) => `${b.start}-${b.end}`).join(', ') : ''}</div>
+          ${r.open ? `<div><a class="btn btn-sm" href="booking.html?room=${r.id}">จองห้องนี้</a></div>` : ''}
         </div>
-        <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
-        <div class="muted small">วันนี้มีการจอง ${todays.length} รายการ${todays.length ? ': ' + todays.map((b) => `${b.start}-${b.end}`).join(', ') : ''}</div>
       </div>`;
     }).join('');
   }

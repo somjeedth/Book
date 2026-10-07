@@ -1,9 +1,9 @@
-/* ระบบจองห้องประชุม — Mock data & shared helpers
+/* จองห้องประชุมสำนักการเงิน — Mock data & shared helpers
    ข้อมูลทั้งหมดเก็บใน localStorage ของเบราว์เซอร์ (เป็น mock ยังไม่มี backend) */
 (function () {
   'use strict';
 
-  const STORE_KEY = 'mrb_data_v1';
+  const STORE_KEY = 'mrb_data_v2';
   const SESSION_KEY = 'mrb_session_v1';
   const ROOT = document.body.dataset.root || '';
 
@@ -11,7 +11,9 @@
   const CLOSE_TIME = '18:00';
   const SLOT_MIN = 30;
 
-  const AMENITIES = ['โปรเจคเตอร์', 'จอทีวี', 'ไวท์บอร์ด', 'ระบบประชุมออนไลน์', 'ไมโครโฟน/ลำโพง', 'เครื่องปรับอากาศ', 'Wi-Fi'];
+  const AMENITIES = ['จอทีวี', 'ไวท์บอร์ด', 'Wi-Fi', 'ไมโครโฟน/ลำโพง'];
+  const APP_NAME = 'จองห้องประชุมสำนักการเงิน';
+  const LOCATION = 'ชั้น 17 อาคาร ซี.พี.ทาวเวอร์ สีลม';
   const DEPARTMENTS = ['ฝ่ายบริหาร', 'ฝ่ายบุคคล', 'ฝ่ายบัญชีและการเงิน', 'ฝ่ายการตลาด', 'ฝ่ายขาย', 'ฝ่ายเทคโนโลยีสารสนเทศ', 'ฝ่ายจัดซื้อ', 'ฝ่ายปฏิบัติการ'];
   const STATUS = {
     confirmed: { label: 'ยืนยันแล้ว', cls: 'pill-free' },
@@ -73,11 +75,11 @@
 
   function seed() {
     const rooms = [
-      { id: 1, name: 'ห้องประชุม 1', capacity: 13, capacityLabel: '13 คน', floor: 'ชั้น 3', open: true,
-        amenities: ['โปรเจคเตอร์', 'จอทีวี', 'ไวท์บอร์ด', 'ระบบประชุมออนไลน์', 'ไมโครโฟน/ลำโพง', 'เครื่องปรับอากาศ', 'Wi-Fi'],
+      { id: 1, name: 'ห้องประชุม 1', capacity: 13, capacityLabel: '13 คน', floor: LOCATION, open: true,
+        amenities: AMENITIES.slice(),
         note: 'ห้องประชุมใหญ่ เหมาะสำหรับประชุมทีม/นำเสนองาน' },
-      { id: 2, name: 'ห้องประชุม 2', capacity: 6, capacityLabel: '5–6 คน', floor: 'ชั้น 3', open: false,
-        amenities: ['จอทีวี', 'ไวท์บอร์ด', 'เครื่องปรับอากาศ', 'Wi-Fi'],
+      { id: 2, name: 'ห้องประชุม 2', capacity: 6, capacityLabel: '5–6 คน', floor: LOCATION, open: false,
+        amenities: AMENITIES.slice(),
         note: 'ห้องประชุมเล็ก (ยังไม่เปิดให้จอง)' },
     ];
     const users = [
@@ -144,7 +146,7 @@
       id: data.seq, code: makeCode(o.date, data.seq), roomId: o.roomId, userId: o.user.id,
       name: o.user.name, department: o.user.department, phone: o.user.phone, email: o.user.email,
       purpose: o.purpose, attendees: o.attendees, date: o.date, start: o.start, end: o.end,
-      status: 'confirmed', createdAt: o.createdAt, token: Math.random().toString(36).slice(2, 10),
+      status: 'confirmed', createdAt: o.createdAt, ref: makeRef(), token: Math.random().toString(36).slice(2, 10),
     };
     data.seq++;
     data.bookings.push(b);
@@ -163,6 +165,7 @@
     return b;
   }
 
+  function makeRef() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 6; i++) r += c[Math.floor(Math.random() * c.length)]; return r; }
   function makeCode(date, seq) { return 'BK' + date.replace(/-/g, '').slice(2) + '-' + String(seq).padStart(4, '0'); }
   function roomName(data, id) { const r = data.rooms.find((x) => x.id === id); return r ? r.name : '-'; }
 
@@ -355,7 +358,7 @@
     const errs = validateBooking(o);
     if (errs.length) return { ok: false, errors: errs };
     const b = {
-      id: DATA.seq, code: makeCode(o.date, DATA.seq), roomId: Number(o.roomId), userId: actor.id,
+      id: DATA.seq, code: makeCode(o.date, DATA.seq), ref: makeRef(), roomId: Number(o.roomId), userId: actor.id || null, guest: !actor.id,
       name: o.name.trim(), department: o.department.trim(), phone: o.phone.trim(), email: o.email.trim(),
       purpose: o.purpose.trim(), attendees: Number(o.attendees) || null, note: (o.note || '').trim(), date: o.date, start: o.start, end: o.end,
       status: 'confirmed', createdAt: Date.now(), token: Math.random().toString(36).slice(2, 10),
@@ -366,6 +369,12 @@
     const email = addEmail(DATA, b, 'confirmed');
     save();
     return { ok: true, booking: b, email };
+  }
+
+  /** ค้นหาการจองด้วยรหัสยืนยัน + อีเมล (สำหรับผู้จองที่ไม่ได้สมัครสมาชิก) */
+  function findByRef(ref, email) {
+    const r = String(ref || '').trim().toUpperCase(), e = String(email || '').trim().toLowerCase();
+    return DATA.bookings.find((b) => (b.ref === r || b.code === r) && b.email.toLowerCase() === e) || null;
   }
 
   function requestCancel(id, reason, actor) {
@@ -480,7 +489,8 @@
     return `
       <div class="card-head" style="margin-bottom:8px"><h2 style="margin:0">รายละเอียดการจอง ${esc(b.code)}</h2>${statusPill(b.status)}</div>
       <dl class="kv">
-        <dt>ห้อง</dt><dd>${esc(r.name)} (${esc(r.capacityLabel)})</dd>
+        <dt>รหัสยืนยัน</dt><dd><b style="letter-spacing:.1em">${esc(b.ref || '-')}</b>${b.userId ? '' : ' <span class="pill pill-off">จองแบบไม่สมัครสมาชิก</span>'}</dd>
+        <dt>ห้อง</dt><dd>${esc(r.name)} (${esc(r.capacityLabel)})<div class="muted small">${esc(r.floor)}</div></dd>
         <dt>วันที่</dt><dd>${fmtDateLong(b.date)}</dd>
         <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
         <dt>ชื่อผู้จอง</dt><dd>${esc(b.name)}</dd>
@@ -514,19 +524,19 @@
       reminder: `เรียน คุณ${esc(b.name)}<br><br>ขอแจ้งเตือนว่า <b>พรุ่งนี้</b> ท่านมีการจองห้องประชุม ดังนี้`,
     }[e.kind];
     const cta = {
-      confirmed: `<p class="small muted">หากต้องการยกเลิก สามารถกด <a href="${cancelUrl}">ขอยกเลิกการจอง</a> ได้</p>`,
+      confirmed: `<p class="small muted">เก็บรหัสยืนยันไว้เพื่อดูหรือยกเลิกการจองได้ที่หน้า <a href="${ROOT}manage.html?ref=${esc(b.ref || '')}">จัดการการจอง</a> (ใช้รหัสยืนยัน + อีเมลนี้ ไม่ต้องเข้าสู่ระบบ) หรือกด <a href="${cancelUrl}">ขอยกเลิกการจอง</a> ได้ทันที</p>`,
       cancel_requested: `<a class="btn" href="${ROOT}admin/cancel-requests.html">ไปที่หน้าอนุมัติคำขอยกเลิก</a>`,
       reminder: `<p>หากไม่ต้องการใช้ห้องแล้ว กรุณากดยกเลิก เพื่อเปิดให้ผู้อื่นจองได้</p>
-                 <a class="btn btn-danger" href="${cancelUrl}">ยกเลิกการจองนี้</a> <a class="btn btn-outline" href="${ROOT}my-bookings.html">ดูการจองของฉัน</a>`,
+                 <a class="btn btn-danger" href="${cancelUrl}">ยกเลิกการจองนี้</a> <a class="btn btn-outline" href="${b.userId ? ROOT + 'my-bookings.html' : ROOT + 'manage.html?ref=' + esc(b.ref || '')}">ดูการจองของฉัน</a>`,
     }[e.kind] || '';
     return `<div class="email">
-      <div class="eh">ระบบจองห้องประชุม — ${esc(EMAIL_KIND[e.kind].label)}</div>
+      <div class="eh">${APP_NAME} — ${esc(EMAIL_KIND[e.kind].label)}</div>
       <div class="eb">
         <div class="muted small" style="margin-bottom:12px">ถึง: ${esc(e.to)}<br>หัวเรื่อง: <b style="color:var(--ink)">${esc(e.subject)}</b><br>ส่งเมื่อ: ${fmtDateTime(e.ts)}</div>
         <p>${intro}</p>
         <table>
-          <tr><td>รหัสการจอง</td><td><b>${b.code}</b></td></tr>
-          <tr><td>ห้อง</td><td>${esc(r.name)} (${esc(r.capacityLabel)})</td></tr>
+          <tr><td>รหัสยืนยันการจอง</td><td><b style="font-size:1.15rem;letter-spacing:.12em">${esc(b.ref || '-')}</b> <span class="muted small">(${b.code})</span></td></tr>
+          <tr><td>ห้อง</td><td>${esc(r.name)} (${esc(r.capacityLabel)})<div class="muted small">${esc(r.floor)}</div></td></tr>
           <tr><td>วันที่</td><td>${fmtDateLong(b.date)}</td></tr>
           <tr><td>เวลา</td><td>${b.start} – ${b.end} น.</td></tr>
           <tr><td>ผู้จอง</td><td>${esc(b.name)} (${esc(b.department)})</td></tr>
@@ -550,28 +560,32 @@
           ['dashboard', 'admin/dashboard.html', 'Dashboard', 'dashboard'],
           ['status', 'index.html', 'สถานะห้อง'],
           ['bookings', 'admin/bookings.html', 'รายการจอง', 'bookings'],
-          ['requests', 'admin/cancel-requests.html', `คำขอยกเลิก${pending ? ` <span class="badge-admin" style="background:#fff;color:var(--red)">${pending}</span>` : ''}`, 'approve'],
+          ['requests', 'admin/cancel-requests.html', `คำขอยกเลิก${pending ? ` <span class="badge-admin" style="background:var(--red);color:#fff">${pending}</span>` : ''}`, 'approve'],
           ['rooms', 'admin/rooms.html', 'จัดการห้อง', 'rooms'],
           ['history', 'admin/history.html', 'ประวัติ', 'history'],
           ['emails', 'admin/emails.html', 'อีเมล', 'emails'],
           ['users', 'admin/users.html', 'สิทธิ์ผู้ดูแล', 'users'],
         ].filter((l) => !l[3] || can(u, l[3]))
-      : [
+      : u ? [
           ['status', 'index.html', 'สถานะห้อง'],
           ['book', 'booking.html', 'จองห้องประชุม'],
           ['mine', 'my-bookings.html', 'การจองของฉัน'],
           ['inbox', 'email.html', 'กล่องอีเมล (จำลอง)'],
+        ] : [
+          ['status', 'index.html', 'สถานะห้อง'],
+          ['book', 'booking.html', 'จองห้องประชุม'],
+          ['manage', 'manage.html', 'จัดการการจอง'],
         ];
     const right = u
       ? `<div class="user-chip"><div class="avatar">${esc(u.name.slice(0, 1))}</div>
            <div class="who"><div style="font-weight:500">${esc(u.name)} ${isAdmin ? '<span class="badge-admin">ADMIN</span>' : ''}</div>
            <div class="dept" style="font-size:.78rem;opacity:.85">${esc(u.department)}</div></div>
            <a href="#" id="logoutBtn" title="ออกจากระบบ" class="logout">ออกจากระบบ</a></div>`
-      : `<div class="user-chip"><a class="btn btn-sm btn-outline" style="color:var(--green-700)" href="${ROOT}login.html">เข้าสู่ระบบ</a><a href="${ROOT}admin/login.html">สำหรับแอดมิน</a></div>`;
+      : `<div class="user-chip"><a class="btn btn-sm btn-outline" href="${ROOT}login.html">เข้าสู่ระบบ<span class="long">/ สมัครสมาชิก</span></a></div>`;
     const html = `
       <div class="mock-note">หน้านี้เป็น Mockup (HTML) — ข้อมูลเก็บในเบราว์เซอร์ · <a href="#" id="resetMock">รีเซ็ตข้อมูลตัวอย่าง</a></div>
-      <header class="topbar"><div class="inner">
-        <a class="brand" href="${isAdmin ? adminHome(u) : ROOT + 'index.html'}"><span class="logo">MR</span><span>ระบบจองห้องประชุม</span></a>
+      <header class="topbar ${isAdmin ? 't-admin' : u ? 't-user' : 't-guest'}"><div class="inner">
+        <a class="brand" href="${isAdmin ? adminHome(u) : ROOT + 'index.html'}"><span class="logo" aria-hidden="true"></span><span>${APP_NAME}</span></a>
         <button class="menu-btn" id="menuBtn" type="button" aria-label="เมนู" aria-expanded="false" aria-controls="mainNav"><span></span><span></span><span></span></button>
         <nav class="nav" id="mainNav">${links.map(([k, href, label]) => `<a href="${ROOT}${href}" class="${k === active ? 'active' : ''}">${label}</a>`).join('')}${u ? '<a href="#" class="nav-logout" id="navLogout">ออกจากระบบ</a>' : ''}</nav>
         ${right}
@@ -617,13 +631,13 @@
   load();
 
   window.MRB = {
-    ROOT, OPEN_TIME, CLOSE_TIME, SLOT_MIN, AMENITIES, DEPARTMENTS, STATUS, ACTIVE_STATUSES, LOG_LABEL, EMAIL_KIND,
+    ROOT, APP_NAME, LOCATION, OPEN_TIME, CLOSE_TIME, SLOT_MIN, AMENITIES, DEPARTMENTS, STATUS, ACTIVE_STATUSES, LOG_LABEL, EMAIL_KIND,
     get data() { return DATA; }, save, reset,
     pad, iso, parseISO, addDays, toMin, fromMin, today, nowMin, startOfWeek, slots, timeOptions,
     fmtDate, fmtDateLong, fmtMonth, fmtDow, fmtDateTime,
     PERMISSIONS, ALL_PERMS, can, adminHome, saveAdmin, setAdminDisabled, removeAdmin, permLabels,
     currentUser, login, register, logout, requireUser, requireAdmin,
-    room, activeBookings, bookingsOn, findConflicts, validateBooking, createBooking,
+    room, activeBookings, bookingsOn, findConflicts, validateBooking, createBooking, findByRef,
     requestCancel, approveCancel, rejectCancel, adminCancel, runReminders, updateRoom,
     esc, $, $$, statusPill, qs, toast, modal, confirmBox, bookingDetailHTML, renderEmail, renderTopbar, downloadCSV,
   };
