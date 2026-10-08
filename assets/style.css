@@ -209,10 +209,12 @@ textarea { resize: vertical; min-height: 84px; }
 .month .day.today .num { background: var(--green); color: #fff; }
 .month .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: .85rem; font-weight: 600; }
 .month .bar { display: block; margin-top: 4px; font-size: .72rem; padding: 2px 6px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar.free { background: var(--green-50); color: var(--green-700); }
-.bar.part { background: var(--amber-50); color: #8a5f05; }
-.bar.full { background: var(--red); color: #fff; }
-.bar.off { background: var(--gray-100); color: var(--gray-600); }
+.bar.free { background: #e6f4ea; color: #1e7b3c; }
+.bar.booked { background: var(--red); color: #fff; cursor: pointer; }
+.bar.booked:hover { filter: brightness(.92); }
+.bar.booked b { font-weight: 600; margin-right: 2px; }
+.bar.off { background: var(--red-50); color: #b3362c; }
+.bar.more { background: transparent; color: var(--gray-600); border-left-color: transparent !important; padding-left: 4px; }
 
 /* ---------- Tables ---------- */
 .table-wrap { overflow-x: auto; }

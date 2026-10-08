@@ -175,21 +175,27 @@
     const first = new Date(state.date.getFullYear(), state.date.getMonth(), 1);
     const start = M.startOfWeek(first);
     $('#calTitle').textContent = M.fmtMonth(first);
-    const totalMin = M.toMin(M.CLOSE_TIME) - M.toMin(M.OPEN_TIME);
     let html = '<div class="month">' + ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'].map((d) => `<div class="dow">${d}</div>`).join('');
     for (let i = 0; i < 42; i++) {
       const d = M.addDays(start, i);
       const ds = M.iso(d);
       const other = d.getMonth() !== first.getMonth();
       if (i >= 35 && other) break;
+      const MAX = 3; // แสดงการจองได้สูงสุดต่อวัน ที่เหลือแสดงเป็น +N
+      let shown = 0, hidden = 0;
       const bars = visibleRooms().map((r) => {
-        if (!r.open) return `<span class="bar off" style="--room:${M.roomColor(r)}" title="${esc(r.name)} ยังไม่เปิดให้จอง">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ปิด</span>`;
-        const list = M.bookingsOn(ds, r.id);
-        const used = list.reduce((s, b) => s + (M.toMin(b.end) - M.toMin(b.start)), 0);
-        const cls = !list.length ? 'free' : used >= totalMin ? 'full' : 'part';
-        const txt = !list.length ? 'ว่าง' : used >= totalMin ? 'เต็ม' : `จอง ${list.length}`;
-        return `<span class="bar ${cls}" style="--room:${M.roomColor(r)}" title="${esc(r.name)}">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ${txt}</span>`;
-      }).join('');
+        const short = esc(r.name.replace('ห้องประชุม', 'ห้อง'));
+        const st = `--room:${M.roomColor(r)}`;
+        if (!r.open) return `<span class="bar off" style="${st}" title="${esc(r.name)} ยังไม่เปิดให้จอง">${short}: ยังไม่เปิดให้จอง</span>`;
+        const list = M.bookingsOn(ds, r.id).sort((a, b) => a.start.localeCompare(b.start));
+        if (!list.length) return `<span class="bar free" style="${st}">${short}: ว่าง</span>`;
+        return list.map((b) => {
+          if (shown >= MAX) { hidden++; return ''; }
+          shown++;
+          return `<span class="bar booked" style="${st}" data-bid="${b.id}"><b>${b.start}</b> ${esc(b.purpose)}</span>`;
+        }).join('');
+      }).join('') + (hidden ? `<span class="bar more">+${hidden} รายการ</span>` : '');
+
       html += `<div class="day ${other ? 'other' : ''} ${ds === M.today() ? 'today' : ''}" data-day="${ds}"><span class="num">${d.getDate()}</span>${bars}</div>`;
     }
     $('#calendar').innerHTML = html + '</div>';
@@ -218,6 +224,24 @@
   $('#next').addEventListener('click', () => shift(1));
   $('#goToday').addEventListener('click', () => { state.date = M.parseISO(M.today()); renderCalendar(); });
 
+  function openBooking(id) {
+    const b = M.data.bookings.find((x) => x.id === id);
+    if (!b) return;
+    if (isAdmin || isMine(b)) {
+      M.modal(M.bookingDetailHTML(b));
+    } else {
+      M.modal(`<h2>ไม่ว่าง</h2><dl class="kv"><dt>ห้อง</dt><dd>${M.roomTag(M.room(b.roomId))}</dd><dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
+        <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
+        <dt>ผู้จอง</dt><dd>${esc(b.name)}</dd>
+        <dt>แผนก</dt><dd>${esc(b.department)}</dd>
+        <dt>เบอร์โทรศัพท์</dt><dd>${esc(b.phone)}</dd>
+        <dt>วัตถุประสงค์</dt><dd>${esc(b.purpose)}</dd>
+        ${b.attendees ? `<dt>ผู้เข้าร่วม</dt><dd>${b.attendees} คน</dd>` : ''}</dl>
+        <p class="muted small">ช่วงเวลานี้มีการจองแล้ว หากต้องการใช้ห้อง สามารถติดต่อผู้จองได้โดยตรง</p>
+        <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button></div>`);
+    }
+  }
+
   /* ---------- hover: แสดงหัวข้อ ผู้จอง และแผนก ---------- */
   const tipEl = document.createElement('div');
   tipEl.className = 'slot-tip'; tipEl.hidden = true; document.body.appendChild(tipEl);
@@ -230,7 +254,7 @@
     tipEl.style.left = Math.max(8, x) + 'px'; tipEl.style.top = Math.max(8, y) + 'px';
   }
   $('#calendar').addEventListener('mousemove', (e) => {
-    const cell = e.target.closest('.slot[data-bid]');
+    const cell = e.target.closest('[data-bid]');
     if (!cell) { tipEl.hidden = true; tipBid = null; return; }
     if (cell.dataset.bid !== tipBid) {
       tipBid = cell.dataset.bid;
@@ -248,6 +272,8 @@
 
   $('#calendar').addEventListener('click', (e) => {
     tipEl.hidden = true; tipBid = null;
+    const mb = e.target.closest('.bar[data-bid]');
+    if (mb) { openBooking(Number(mb.dataset.bid)); return; }
     const day = e.target.closest('[data-day]');
     if (day) { state.date = M.parseISO(day.dataset.day); state.view = 'day'; renderCalendar(); return; }
     const free = e.target.closest('.slot[data-time]');
@@ -257,22 +283,7 @@
       return;
     }
     const busy = e.target.closest('.slot[data-bid]');
-    if (busy) {
-      const b = M.data.bookings.find((x) => x.id === Number(busy.dataset.bid));
-      if (isAdmin || isMine(b)) {
-        M.modal(M.bookingDetailHTML(b));
-      } else {
-        M.modal(`<h2>ไม่ว่าง</h2><dl class="kv"><dt>ห้อง</dt><dd>${M.roomTag(M.room(b.roomId))}</dd><dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
-          <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
-          <dt>ผู้จอง</dt><dd>${esc(b.name)}</dd>
-          <dt>แผนก</dt><dd>${esc(b.department)}</dd>
-          <dt>เบอร์โทรศัพท์</dt><dd>${esc(b.phone)}</dd>
-          <dt>วัตถุประสงค์</dt><dd>${esc(b.purpose)}</dd>
-          ${b.attendees ? `<dt>ผู้เข้าร่วม</dt><dd>${b.attendees} คน</dd>` : ''}</dl>
-          <p class="muted small">ช่วงเวลานี้มีการจองแล้ว หากต้องการใช้ห้อง สามารถติดต่อผู้จองได้โดยตรง</p>
-          <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button></div>`);
-      }
-    }
+    if (busy) openBooking(Number(busy.dataset.bid));
   });
 
   if (!['day', 'week', 'month'].includes(state.view)) state.view = 'day';
