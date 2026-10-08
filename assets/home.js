@@ -131,12 +131,11 @@
       const mine = user && bk.userId === user.id;
       const firstMin = Math.max(M.toMin(bk.start), M.toMin(M.OPEN_TIME));
       const n = (M.toMin(t) - firstMin) / M.SLOT_MIN; // ช่องที่เท่าไรของการจองนี้ (0 = ช่องแรก)
-      const who = `<span class="who">${esc(bk.name)} · ${esc(bk.department)}${mine ? ' (ของคุณ)' : ''}</span>`;
-      // รายวัน: เวลา+หัวข้อ / ผู้จอง · รายสัปดาห์ (ช่องแคบ): หัวข้อ / เวลา / ผู้จอง
-      const lines = compact ? [`<b>${esc(bk.purpose)}</b>`, `<span class="who">${bk.start}-${bk.end}</span>`, who]
-        : [`<b>${bk.start}-${bk.end}</b> ${esc(bk.purpose)}`, who];
+      // รายวัน: เวลา+หัวข้อ · รายสัปดาห์ (ช่องแคบ): หัวข้อ / เวลา — ข้อมูลผู้จองดูได้เมื่อคลิก
+      const lines = compact ? [`<b>${esc(bk.purpose)}</b>`, `<span class="who">${bk.start}-${bk.end}</span>`]
+        : [`<b>${bk.start}-${bk.end}</b> ${esc(bk.purpose)}`];
       const label = lines[n] || '';
-      const tip = `${bk.start}-${bk.end} ${bk.purpose} — ${bk.name} (${bk.department})`;
+      const tip = `${bk.start}-${bk.end} ${bk.purpose}`;
       return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}" title="${esc(tip)}">${label}</div>`;
     }
     if (isPast) return `<div class="slot off past"></div>`;
