@@ -135,8 +135,7 @@
       const lines = compact ? [`<b>${esc(bk.purpose)}</b>`, `<span class="who">${bk.start}-${bk.end}</span>`]
         : [`<b>${bk.start}-${bk.end}</b> ${esc(bk.purpose)}`];
       const label = lines[n] || '';
-      const tip = `${bk.start}-${bk.end} ${bk.purpose}`;
-      return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}" title="${esc(tip)}">${label}</div>`;
+      return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}">${label}</div>`;
     }
     if (isPast) return `<div class="slot off past"></div>`;
     return `<div class="slot ${inRange ? 'match' : ''}" data-room="${r.id}" data-date="${date}" data-time="${t}" title="ว่าง — คลิกเพื่อจอง">ว่าง</div>`;
@@ -219,7 +218,36 @@
   $('#next').addEventListener('click', () => shift(1));
   $('#goToday').addEventListener('click', () => { state.date = M.parseISO(M.today()); renderCalendar(); });
 
+  /* ---------- hover: แสดงหัวข้อ ผู้จอง และแผนก ---------- */
+  const tipEl = document.createElement('div');
+  tipEl.className = 'slot-tip'; tipEl.hidden = true; document.body.appendChild(tipEl);
+  let tipBid = null;
+  function placeTip(e) {
+    const pad = 14, w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    let x = e.clientX + pad, y = e.clientY + pad;
+    if (x + w > innerWidth - 8) x = e.clientX - w - pad;
+    if (y + h > innerHeight - 8) y = e.clientY - h - pad;
+    tipEl.style.left = Math.max(8, x) + 'px'; tipEl.style.top = Math.max(8, y) + 'px';
+  }
+  $('#calendar').addEventListener('mousemove', (e) => {
+    const cell = e.target.closest('.slot[data-bid]');
+    if (!cell) { tipEl.hidden = true; tipBid = null; return; }
+    if (cell.dataset.bid !== tipBid) {
+      tipBid = cell.dataset.bid;
+      const b = M.data.bookings.find((x) => x.id === Number(tipBid));
+      if (!b) return;
+      tipEl.innerHTML = `<div class="t-topic">${esc(b.purpose)}</div>
+        <div class="t-time">${M.roomTag(M.room(b.roomId))} · ${b.start}–${b.end} น.</div>
+        <dl><dt>ผู้จอง</dt><dd>${esc(b.name)}${isMine(b) ? ' (คุณ)' : ''}</dd><dt>แผนก</dt><dd>${esc(b.department)}</dd></dl>
+        <div class="t-hint">คลิกเพื่อดูรายละเอียด</div>`;
+      tipEl.hidden = false;
+    }
+    placeTip(e);
+  });
+  $('#calendar').addEventListener('mouseleave', () => { tipEl.hidden = true; tipBid = null; });
+
   $('#calendar').addEventListener('click', (e) => {
+    tipEl.hidden = true; tipBid = null;
     const day = e.target.closest('[data-day]');
     if (day) { state.date = M.parseISO(day.dataset.day); state.view = 'day'; renderCalendar(); return; }
     const free = e.target.closest('.slot[data-time]');

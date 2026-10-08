@@ -520,3 +520,18 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .month .bar { border-left: 4px solid var(--room, transparent); }
 .room-pick.selected { border-color: var(--room); box-shadow: 0 0 0 2px var(--room) !important; }
 @media (max-width: 640px) { .month .bar { border-left-width: 0; background-image: linear-gradient(90deg, var(--room) 0 4px, transparent 4px); } }
+
+/* ---------- hover card บนช่องที่ถูกจอง ---------- */
+.slot-tip {
+  position: fixed; z-index: 40; pointer-events: none; max-width: 280px;
+  background: #fff; color: var(--ink); border: 1px solid var(--gray-200); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(40, 32, 16, .16); padding: 10px 12px; font-size: .85rem; line-height: 1.45;
+}
+.slot-tip .t-topic { font-weight: 600; font-size: .92rem; margin-bottom: 2px; }
+.slot-tip .t-time { color: var(--gray-600); margin-bottom: 6px; }
+.slot-tip .room-tag { font-weight: 500; }
+.slot-tip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.slot-tip dt { color: var(--gray-600); }
+.slot-tip dd { margin: 0; }
+.slot-tip .t-hint { margin-top: 6px; font-size: .75rem; color: var(--gray-400); }
+@media (hover: none) { .slot-tip { display: none !important; } }
