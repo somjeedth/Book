@@ -166,10 +166,10 @@ textarea { resize: vertical; min-height: 84px; }
 .btn-room:hover { background: var(--room); filter: brightness(.9); }
 .room-card .room-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 @media (max-width: 520px) { .room-card { grid-template-columns: minmax(0, 1fr); } .room-card .room-photo { aspect-ratio: 16 / 9; } }
-.room-card .now { font-size: 1.25rem; font-weight: 600; }
-.room-card.busy .now { color: var(--red); }
-.room-card:not(.busy):not(.off) .now { color: var(--green-700); }
-.room-card.off .now { color: var(--gray-600); }
+/* แท็กสถานะห้อง: เขียว = ว่าง / เปิดให้จอง, แดง = ไม่ว่าง / ยังไม่เปิดให้จอง */
+.tag-ok { background: #e6f4ea; color: #1e7b3c; }
+.tag-no { background: var(--red-50); color: #b3362c; }
+.status-tag { font-size: .88rem; padding: 4px 12px; }
 .amenities { display: flex; flex-wrap: wrap; gap: 6px; }
 .amenities span { font-size: .78rem; background: #fff; border: 1px solid var(--gray-200); padding: 2px 8px; border-radius: 6px; color: var(--gray-600); }
 .room-card.dim { opacity: .45; }

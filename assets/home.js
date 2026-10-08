@@ -110,7 +110,7 @@
         <div class="room-body">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
             <div><h2 class="room-title" style="margin:0">${esc(r.name)}</h2><div class="muted small">ห้องประชุม ${esc(r.capacityLabel)}</div><div class="muted small">📍 ${esc(r.floor)}</div></div>
-            <div class="now">● ${nowTxt}</div>
+            <span class="pill status-tag ${cls === 'busy' || cls === 'off' ? 'tag-no' : 'tag-ok'}">${nowTxt}</span>
           </div>
           <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
           ${r.open ? `<div><a class="btn btn-sm btn-room" href="booking.html?room=${r.id}">จองห้องนี้</a></div>` : ''}
