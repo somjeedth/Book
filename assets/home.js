@@ -120,7 +120,7 @@
   }
 
   /* ---------- ปฏิทิน ---------- */
-  function slotCell(r, date, t, bk) {
+  function slotCell(r, date, t, bk, compact) {
     const td = M.today();
     const isPast = date < td || (date === td && M.toMin(t) + M.SLOT_MIN <= M.nowMin());
     const f = state.f;
@@ -129,8 +129,15 @@
     if (bk) {
       const isStart = bk.start === t || (M.toMin(bk.start) < M.toMin(M.OPEN_TIME) && t === M.OPEN_TIME);
       const mine = user && bk.userId === user.id;
-      const label = isStart ? `${bk.start}-${bk.end} ${isAdmin ? esc(bk.department) : mine ? 'การจองของคุณ' : 'ไม่ว่าง'}` : '';
-      return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}" title="${bk.start}-${bk.end} ไม่ว่าง">${label}</div>`;
+      const firstMin = Math.max(M.toMin(bk.start), M.toMin(M.OPEN_TIME));
+      const n = (M.toMin(t) - firstMin) / M.SLOT_MIN; // ช่องที่เท่าไรของการจองนี้ (0 = ช่องแรก)
+      const who = `<span class="who">${esc(bk.name)} · ${esc(bk.department)}${mine ? ' (ของคุณ)' : ''}</span>`;
+      // รายวัน: เวลา+หัวข้อ / ผู้จอง · รายสัปดาห์ (ช่องแคบ): หัวข้อ / เวลา / ผู้จอง
+      const lines = compact ? [`<b>${esc(bk.purpose)}</b>`, `<span class="who">${bk.start}-${bk.end}</span>`, who]
+        : [`<b>${bk.start}-${bk.end}</b> ${esc(bk.purpose)}`, who];
+      const label = lines[n] || '';
+      const tip = `${bk.start}-${bk.end} ${bk.purpose} — ${bk.name} (${bk.department})`;
+      return `<div class="slot busy ${isStart ? 'start' : ''} ${mine ? 'mine' : ''}" data-bid="${bk.id}" title="${esc(tip)}">${label}</div>`;
     }
     if (isPast) return `<div class="slot off past"></div>`;
     return `<div class="slot ${inRange ? 'match' : ''}" data-room="${r.id}" data-date="${date}" data-time="${t}" title="ว่าง — คลิกเพื่อจอง">ว่าง</div>`;
@@ -161,7 +168,7 @@
     const lists = days.map((d) => M.bookingsOn(M.iso(d), r.id));
     M.slots().forEach((t) => {
       html += `<div class="time">${t}</div>`;
-      days.forEach((d, i) => { html += slotCell(r, M.iso(d), t, bookingAt(lists[i], t)); });
+      days.forEach((d, i) => { html += slotCell(r, M.iso(d), t, bookingAt(lists[i], t), true); });
     });
     $('#calendar').innerHTML = html + '</div>';
   }

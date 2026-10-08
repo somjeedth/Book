@@ -141,7 +141,7 @@
           const sel = M.toMin(t) >= M.toMin(v.start) && M.toMin(t) < M.toMin(v.end);
           const past = v.date === M.today() && M.toMin(t) + M.SLOT_MIN <= M.nowMin();
           let cell;
-          if (b) cell = `<div class="slot busy ${b.start === t ? 'start' : ''}" style="${sel ? 'box-shadow:inset 0 0 0 3px #7a1f1f' : ''}">${b.start === t ? `${b.start}-${b.end} ${isAdmin ? esc(b.department) : user && b.userId === user.id ? 'การจองของคุณ' : 'ไม่ว่าง'}` : ''}</div>`;
+          if (b) cell = `<div class="slot busy ${b.start === t ? 'start' : ''}" style="${sel ? 'box-shadow:inset 0 0 0 3px #7a1f1f' : ''}">${b.start === t ? `<b>${b.start}-${b.end}</b> ${esc(b.purpose)}` : ''}</div>`;
           else if (past) cell = `<div class="slot off past"></div>`;
           else cell = `<div class="slot" data-time="${t}" style="${sel ? 'background:var(--green);color:#fff' : ''}">${sel ? 'ช่วงที่เลือก' : 'ว่าง'}</div>`;
           return `<div class="time">${t}</div>${cell}`;

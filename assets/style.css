@@ -190,7 +190,9 @@ textarea { resize: vertical; min-height: 84px; }
   background: var(--green-50); color: var(--green-700); cursor: pointer; transition: background .12s;
 }
 .slot:hover { background: var(--green-100); }
-.slot.busy { background: var(--red); color: #fff; cursor: default; }
+.slot.busy { background: var(--red); color: #fff; cursor: pointer; }
+.slot.busy b { font-weight: 600; margin-right: 4px; }
+.slot.busy .who { opacity: .85; font-size: .9em; }
 .slot.busy.start { border-top: 2px solid #fff; font-weight: 500; }
 .slot.mine { background: #b83a3a; }
 .slot.off { background: repeating-linear-gradient(45deg, var(--gray-50), var(--gray-50) 4px, var(--gray-100) 4px, var(--gray-100) 8px); color: var(--gray-400); cursor: not-allowed; }
