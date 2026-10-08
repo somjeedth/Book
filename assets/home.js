@@ -105,15 +105,15 @@
       else if (cur) { cls = 'busy'; nowTxt = 'ไม่ว่าง'; }
       else { nowTxt = 'ว่าง'; }
       const dim = roomMatches(r) ? '' : ' dim';
-      return `<div class="card room-card ${cls}${dim}">
-        <img class="room-photo" src="assets/img/meeting-room.jpg" alt="">
+      return `<div class="card room-card ${cls}${dim}" style="--room:${M.roomColor(r)}">
+        <div class="room-photo-wrap"><img class="room-photo" src="${M.roomPhoto(r)}" alt="${esc(r.name)}"><span class="room-no">${esc(M.roomNo(r))}</span></div>
         <div class="room-body">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-            <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">ห้องประชุม ${esc(r.capacityLabel)}</div><div class="muted small">📍 ${esc(r.floor)}</div></div>
+            <div><h2 class="room-title" style="margin:0">${esc(r.name)}</h2><div class="muted small">ห้องประชุม ${esc(r.capacityLabel)}</div><div class="muted small">📍 ${esc(r.floor)}</div></div>
             <div class="now">● ${nowTxt}</div>
           </div>
           <div class="amenities">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
-          ${r.open ? `<div><a class="btn btn-sm" href="booking.html?room=${r.id}">จองห้องนี้</a></div>` : ''}
+          ${r.open ? `<div><a class="btn btn-sm btn-room" href="booking.html?room=${r.id}">จองห้องนี้</a></div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -142,7 +142,7 @@
     const rooms = visibleRooms();
     $('#calTitle').textContent = M.fmtDateLong(date);
     let html = `<div class="timeline" style="grid-template-columns:70px repeat(${rooms.length}, minmax(140px,1fr))"><div class="th">เวลา</div>`;
-    html += rooms.map((r) => `<div class="th" style="${roomMatches(r) ? '' : 'opacity:.45'}">${esc(r.name)}<div class="muted small" style="font-weight:400">${esc(r.capacityLabel)}${r.open ? '' : ' · ยังไม่เปิด'}</div></div>`).join('');
+    html += rooms.map((r) => `<div class="th th-room" style="--room:${M.roomColor(r)};${roomMatches(r) ? '' : 'opacity:.45'}">${esc(r.name)}<div class="muted small" style="font-weight:400">${esc(r.capacityLabel)}${r.open ? '' : ' · ยังไม่เปิด'}</div></div>`).join('');
     const lists = rooms.map((r) => M.bookingsOn(date, r.id));
     M.slots().forEach((t) => {
       html += `<div class="time">${t}</div>`;
@@ -178,12 +178,12 @@
       const other = d.getMonth() !== first.getMonth();
       if (i >= 35 && other) break;
       const bars = visibleRooms().map((r) => {
-        if (!r.open) return `<span class="bar off" title="${esc(r.name)} ยังไม่เปิดให้จอง">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ปิด</span>`;
+        if (!r.open) return `<span class="bar off" style="--room:${M.roomColor(r)}" title="${esc(r.name)} ยังไม่เปิดให้จอง">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ปิด</span>`;
         const list = M.bookingsOn(ds, r.id);
         const used = list.reduce((s, b) => s + (M.toMin(b.end) - M.toMin(b.start)), 0);
         const cls = !list.length ? 'free' : used >= totalMin ? 'full' : 'part';
         const txt = !list.length ? 'ว่าง' : used >= totalMin ? 'เต็ม' : `จอง ${list.length}`;
-        return `<span class="bar ${cls}" title="${esc(r.name)}">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ${txt}</span>`;
+        return `<span class="bar ${cls}" style="--room:${M.roomColor(r)}" title="${esc(r.name)}">${esc(r.name.replace('ห้องประชุม', 'ห้อง'))}: ${txt}</span>`;
       }).join('');
       html += `<div class="day ${other ? 'other' : ''} ${ds === M.today() ? 'today' : ''}" data-day="${ds}"><span class="num">${d.getDate()}</span>${bars}</div>`;
     }
@@ -228,9 +228,14 @@
       if (isAdmin || isMine(b)) {
         M.modal(M.bookingDetailHTML(b));
       } else {
-        M.modal(`<h2>ไม่ว่าง</h2><dl class="kv"><dt>ห้อง</dt><dd>${esc(M.room(b.roomId).name)}</dd><dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
-          <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd></dl>
-          <p class="muted small">ช่วงเวลานี้มีการจองแล้ว กรุณาเลือกเวลาอื่น</p>
+        M.modal(`<h2>ไม่ว่าง</h2><dl class="kv"><dt>ห้อง</dt><dd>${M.roomTag(M.room(b.roomId))}</dd><dt>วันที่</dt><dd>${M.fmtDateLong(b.date)}</dd>
+          <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
+          <dt>ผู้จอง</dt><dd>${esc(b.name)}</dd>
+          <dt>แผนก</dt><dd>${esc(b.department)}</dd>
+          <dt>เบอร์โทรศัพท์</dt><dd>${esc(b.phone)}</dd>
+          <dt>วัตถุประสงค์</dt><dd>${esc(b.purpose)}</dd>
+          ${b.attendees ? `<dt>ผู้เข้าร่วม</dt><dd>${b.attendees} คน</dd>` : ''}</dl>
+          <p class="muted small">ช่วงเวลานี้มีการจองแล้ว หากต้องการใช้ห้อง สามารถติดต่อผู้จองได้โดยตรง</p>
           <div class="foot"><button class="btn btn-ghost" data-close>ปิด</button></div>`);
       }
     }

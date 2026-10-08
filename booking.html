@@ -87,10 +87,10 @@
       if (!M.room(roomId) || !M.room(roomId).open) roomId = (rooms.find((r) => r.open) || {}).id;
 
       $('#roomPick').innerHTML = rooms.map((r) => `
-        <label class="card" style="padding:12px;cursor:${r.open ? 'pointer' : 'not-allowed'};opacity:${r.open ? 1 : .55};box-shadow:none" data-room="${r.id}">
+        <label class="card room-pick" style="--room:${M.roomColor(r)};padding:12px;cursor:${r.open ? 'pointer' : 'not-allowed'};opacity:${r.open ? 1 : .55};box-shadow:none" data-room="${r.id}">
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="radio" name="room" value="${r.id}" ${r.open ? '' : 'disabled'} style="accent-color:var(--green)">
-            <b>${esc(r.name)}</b>
+            <input type="radio" name="room" value="${r.id}" ${r.open ? '' : 'disabled'} style="accent-color:var(--room)">
+            ${M.roomTag(r)}
           </div>
           <div class="muted small">ความจุ ${esc(r.capacityLabel)} · ${esc(r.floor)}</div>
           <div class="amenities" style="margin:6px 0">${r.amenities.map((a) => `<span>${esc(a)}</span>`).join('')}</div>
@@ -121,7 +121,7 @@
         const v = values(), r = M.room(roomId);
         $('#capHint').textContent = r ? `ความจุสูงสุด ${r.capacityLabel}` : '';
         $('#attendees').max = r ? r.capacity : '';
-        $$('#roomPick [data-room]').forEach((c) => (c.style.borderColor = Number(c.dataset.room) === roomId ? 'var(--green)' : ''));
+        $$('#roomPick [data-room]').forEach((c) => c.classList.toggle('selected', Number(c.dataset.room) === roomId));
         // ตรวจสอบห้องว่างแบบ real-time
         const box = $('#availability');
         box.className = 'alert';
@@ -134,7 +134,7 @@
         }
         $('#submitBtn').disabled = box.classList.contains('alert-err');
         // ตารางข้าง ๆ
-        $('#dayTitle').textContent = `${r.name} · ${M.fmtDateLong(v.date)}`;
+        $('#dayTitle').innerHTML = `${M.roomTag(r)} · ${M.fmtDateLong(v.date)}`;
         const list = M.bookingsOn(v.date, roomId);
         $('#dayGrid').innerHTML = `<div class="timeline" style="grid-template-columns:60px 1fr">` + M.slots().map((t) => {
           const b = list.find((x) => M.toMin(x.start) <= M.toMin(t) && M.toMin(t) < M.toMin(x.end));

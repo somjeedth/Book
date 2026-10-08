@@ -1,4 +1,4 @@
-/* จองห้องประชุมสำนักการเงิน — Mock data & shared helpers
+/* ห้องประชุมสำนักการเงิน — Mock data & shared helpers
    ข้อมูลทั้งหมดเก็บใน localStorage ของเบราว์เซอร์ (เป็น mock ยังไม่มี backend) */
 (function () {
   'use strict';
@@ -12,8 +12,10 @@
   const SLOT_MIN = 30;
 
   const AMENITIES = ['จอทีวี', 'ไวท์บอร์ด', 'Wi-Fi', 'ไมโครโฟน/ลำโพง'];
-  const APP_NAME = 'จองห้องประชุมสำนักการเงิน';
+  const APP_NAME = 'ห้องประชุมสำนักการเงิน';
   const LOCATION = 'ชั้น 17 อาคาร ซี.พี.ทาวเวอร์ สีลม';
+  /* สีประจำห้อง (ห้อง 1 น้ำตาลทอง, ห้อง 2 น้ำเงินเทา) และรูปห้อง — ใช้ค่า fallback ตาม id ถ้าข้อมูลห้องไม่ได้กำหนดไว้ */
+  const ROOM_COLORS = ['#857654', '#3f6680', '#7a4f6a', '#4f7a5a'];
   const DEPARTMENTS = ['ฝ่ายบริหาร', 'ฝ่ายบุคคล', 'ฝ่ายบัญชีและการเงิน', 'ฝ่ายการตลาด', 'ฝ่ายขาย', 'ฝ่ายเทคโนโลยีสารสนเทศ', 'ฝ่ายจัดซื้อ', 'ฝ่ายปฏิบัติการ'];
   const STATUS = {
     confirmed: { label: 'ยืนยันแล้ว', cls: 'pill-free' },
@@ -326,6 +328,11 @@
 
   /* ---------------- booking logic ---------------- */
   const room = (id) => DATA.rooms.find((r) => r.id === Number(id));
+  const roomColor = (r) => (r && r.color) || ROOM_COLORS[((r ? r.id : 1) - 1) % ROOM_COLORS.length];
+  const roomPhoto = (r) => (r && r.photo) || `${ROOT}assets/img/room-${r && r.id <= 2 ? r.id : 1}.jpg`;
+  const roomNo = (r) => (String(r.name).match(/\d+/) || [r.id])[0];
+  /** ชื่อห้องพร้อมจุดสีประจำห้อง */
+  const roomTag = (r) => `<span class="room-tag" style="--room:${roomColor(r)}"><i></i>${esc(r.name)}</span>`;
   const activeBookings = () => DATA.bookings.filter((b) => ACTIVE_STATUSES.includes(b.status));
   const bookingsOn = (date, roomId) => activeBookings().filter((b) => b.date === date && (!roomId || b.roomId === Number(roomId)));
 
@@ -490,7 +497,7 @@
       <div class="card-head" style="margin-bottom:8px"><h2 style="margin:0">รายละเอียดการจอง ${esc(b.code)}</h2>${statusPill(b.status)}</div>
       <dl class="kv">
         <dt>รหัสยืนยัน</dt><dd><b style="letter-spacing:.1em">${esc(b.ref || '-')}</b>${b.userId ? '' : ' <span class="pill pill-off">จองแบบไม่สมัครสมาชิก</span>'}</dd>
-        <dt>ห้อง</dt><dd>${esc(r.name)} (${esc(r.capacityLabel)})<div class="muted small">${esc(r.floor)}</div></dd>
+        <dt>ห้อง</dt><dd>${roomTag(r)} (${esc(r.capacityLabel)})<div class="muted small">${esc(r.floor)}</div></dd>
         <dt>วันที่</dt><dd>${fmtDateLong(b.date)}</dd>
         <dt>เวลา</dt><dd>${b.start} – ${b.end} น.</dd>
         <dt>ชื่อผู้จอง</dt><dd>${esc(b.name)}</dd>
@@ -639,6 +646,7 @@
     currentUser, login, register, logout, requireUser, requireAdmin,
     room, activeBookings, bookingsOn, findConflicts, validateBooking, createBooking, findByRef,
     requestCancel, approveCancel, rejectCancel, adminCancel, runReminders, updateRoom,
+    roomColor, roomPhoto, roomNo, roomTag,
     esc, $, $$, statusPill, qs, toast, modal, confirmBox, bookingDetailHTML, renderEmail, renderTopbar, downloadCSV,
   };
 })();

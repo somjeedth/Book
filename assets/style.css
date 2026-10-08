@@ -1,4 +1,4 @@
-/* จองห้องประชุมสำนักการเงิน — Mock UI
+/* ห้องประชุมสำนักการเงิน — Mock UI
    สีหลัก: น้ำตาลทอง #857654 บนพื้นขาว/ครีม  |  ฟอนต์: IBM Plex Sans Thai
    (ตัวแปร --green* ใช้ชื่อเดิมเพื่อไม่ต้องแก้ทุกไฟล์ แต่ค่าเป็นโทนน้ำตาลแล้ว) */
 :root {
@@ -154,7 +154,16 @@ textarea { resize: vertical; min-height: 84px; }
 
 /* ---------- Room status cards ---------- */
 .room-card { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 18px; align-items: start; position: relative; overflow: hidden; }
+.room-card { border-top: 4px solid var(--room, var(--green)); }
+.room-photo-wrap { position: relative; }
 .room-card .room-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; display: block; }
+.room-no {
+  position: absolute; top: 8px; left: 8px; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 99px;
+  background: var(--room); color: #fff; font-weight: 700; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.room-card .room-title { color: var(--room); }
+.btn-room { background: var(--room); }
+.btn-room:hover { background: var(--room); filter: brightness(.9); }
 .room-card .room-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 @media (max-width: 520px) { .room-card { grid-template-columns: minmax(0, 1fr); } .room-card .room-photo { aspect-ratio: 16 / 9; } }
 .room-card .now { font-size: 1.25rem; font-weight: 600; }
@@ -501,3 +510,11 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 /* ผู้จองที่ล็อกอินแล้ว: จอกลางแสดงแค่รูปย่อชื่อ เพื่อให้เมนูพอดีแถวเดียว */
 @media (min-width: 941px) and (max-width: 1120px) { .topbar.t-user .user-chip .who { display: none; } }
 @media (max-width: 480px) { .user-chip .long { display: none; } }
+
+/* ---------- สีประจำห้อง ---------- */
+.room-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--room); }
+.room-tag i { width: 10px; height: 10px; border-radius: 50%; background: var(--room); flex: none; }
+.timeline .th-room { color: var(--room); border-top: 4px solid var(--room); background: color-mix(in srgb, var(--room) 8%, #fff); }
+.month .bar { border-left: 4px solid var(--room, transparent); }
+.room-pick.selected { border-color: var(--room); box-shadow: 0 0 0 2px var(--room) !important; }
+@media (max-width: 640px) { .month .bar { border-left-width: 0; background-image: linear-gradient(90deg, var(--room) 0 4px, transparent 4px); } }

@@ -28,7 +28,7 @@
           const upcoming = M.activeBookings().filter((b) => b.roomId === r.id && b.date >= td).length;
           return `<div class="card room-card ${r.open ? '' : 'off'}">
             <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
-              <div><h2 style="margin:0">${esc(r.name)}</h2><div class="muted small">${esc(r.floor)} · ${esc(r.note || '')}</div></div>
+              <div><h2 style="margin:0">${M.roomTag(r)}</h2><div class="muted small">${esc(r.floor)} · ${esc(r.note || '')}</div></div>
               ${r.open ? '<span class="pill pill-free">เปิดให้จอง</span>' : '<span class="pill pill-off">ยังไม่เปิดให้จอง</span>'}
             </div>
             <dl class="kv"><dt>ความจุ</dt><dd>${esc(r.capacityLabel)} (สูงสุด ${r.capacity} คน)</dd><dt>การจองที่กำลังจะถึง</dt><dd>${upcoming} รายการ</dd></dl>
