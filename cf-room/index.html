@@ -1,0 +1,1130 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>CF ห้องว่าง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #0f766e;
+      --brand-2: #14b8a6;
+      --brand-soft: #e6f4f2;
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #14212b;
+      --muted: #64748b;
+      --line: #e3e8ee;
+      --green: #16a34a; --green-soft: #dcfce7;
+      --amber: #d97706; --amber-soft: #fef3c7;
+      --red: #dc2626;   --red-soft: #fee2e2;
+      --blue: #2563eb;  --blue-soft: #dbeafe;
+      --gray: #6b7280;  --gray-soft: #f1f5f9;
+      --radius: 16px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 4px 16px rgba(15, 23, 42, .06);
+      --nav-h: 64px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; }
+    body {
+      font-family: "IBM Plex Sans Thai", system-ui, sans-serif;
+      background: #dfe5ea; color: var(--text); font-size: 15px; line-height: 1.5;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    .hidden { display: none !important; }
+
+    /* ---------- app shell ---------- */
+    .app {
+      max-width: 440px; min-height: 100vh; margin: 0 auto; background: var(--bg);
+      position: relative; display: flex; flex-direction: column;
+      box-shadow: 0 0 40px rgba(0,0,0,.08);
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--brand); color: #fff;
+      padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .topbar h1 { font-size: 17px; font-weight: 600; margin: 0; flex: 1; }
+    .topbar .sub { font-size: 12px; opacity: .8; font-weight: 400; display: block; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 0; background: rgba(255,255,255,.15);
+      color: #fff; display: grid; place-items: center; cursor: pointer; flex: none;
+    }
+    .icon-btn svg { width: 20px; height: 20px; }
+    main { flex: 1; padding: 16px 16px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 440px; z-index: 30;
+      background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottom-nav button {
+      height: var(--nav-h); border: 0; background: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      color: var(--muted); font-size: 12px;
+    }
+    .bottom-nav button svg { width: 22px; height: 22px; }
+    .bottom-nav button.active { color: var(--brand); font-weight: 600; }
+    .bottom-nav .badge {
+      position: absolute; margin: -22px 0 0 26px; background: var(--red); color: #fff;
+      font-size: 10px; border-radius: 99px; padding: 0 6px; line-height: 16px;
+    }
+
+    /* ---------- generic ---------- */
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+    .section-title { font-size: 13px; color: var(--muted); font-weight: 600; margin: 20px 4px 8px; }
+    .btn {
+      height: 48px; border-radius: 12px; border: 0; padding: 0 16px; cursor: pointer;
+      background: var(--brand); color: #fff; font-weight: 600; font-size: 15px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn svg { width: 18px; height: 18px; }
+    .btn-block { width: 100%; }
+    .btn-outline { background: #fff; color: var(--brand); border: 1.5px solid var(--brand); }
+    .btn-ghost { background: var(--gray-soft); color: var(--text); }
+    .btn-danger { background: var(--red-soft); color: var(--red); }
+    .btn-sm { height: 36px; font-size: 13px; padding: 0 12px; border-radius: 10px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: flex; align-items: baseline; gap: 6px; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .field label .no { color: var(--brand); min-width: 20px; }
+    .field label .opt { font-weight: 400; color: var(--muted); font-size: 12px; }
+    .input, select.input {
+      width: 100%; height: 46px; border: 1.5px solid var(--line); border-radius: 12px;
+      padding: 0 12px; background: #fff; outline: none; font-size: 15px;
+    }
+    .input:focus { border-color: var(--brand-2); box-shadow: 0 0 0 3px rgba(20,184,166,.15); }
+    select.input {
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row2 > * { min-width: 0; }
+    input[type=date].input { padding: 0 8px; font-size: 14px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* segmented choice buttons */
+    .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+    .seg button {
+      flex: 1 1 0; min-width: 0; height: 42px; border-radius: 10px; cursor: pointer;
+      border: 1.5px solid var(--line); background: #fff; font-size: 14px; padding: 0 6px; white-space: nowrap;
+    }
+    .seg button.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+    /* station chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 10px;
+      border-radius: 99px; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 500;
+    }
+    .chip button { border: 0; background: rgba(15,118,110,.15); color: var(--brand); width: 20px; height: 20px; border-radius: 50%; cursor: pointer; line-height: 1; padding: 0; }
+    .suggest { border: 1.5px solid var(--line); border-radius: 12px; margin-top: 6px; background: #fff; max-height: 200px; overflow: auto; }
+    .suggest button { display: flex; width: 100%; text-align: left; border: 0; background: none; padding: 10px 12px; cursor: pointer; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); }
+    .suggest button:last-child { border-bottom: 0; }
+    .line-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+    .sticky-actions {
+      position: sticky; bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+      display: flex; gap: 8px; margin-top: 8px; z-index: 5;
+    }
+    .sticky-actions .btn { box-shadow: 0 6px 18px rgba(15,118,110,.25); }
+
+    /* ---------- login ---------- */
+    .login {
+      min-height: 100vh; display: flex; flex-direction: column; padding: 0;
+      background: linear-gradient(170deg, var(--brand) 0%, #115e59 42%, var(--bg) 42%);
+    }
+    .login-head { color: #fff; padding: calc(56px + env(safe-area-inset-top)) 24px 28px; }
+    .logo-mark {
+      width: 56px; height: 56px; border-radius: 16px; background: #fff; color: var(--brand);
+      display: grid; place-items: center; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    }
+    .logo-mark svg { width: 30px; height: 30px; }
+    .login-head h2 { margin: 0; font-size: 24px; }
+    .login-head p { margin: 4px 0 0; opacity: .85; font-size: 14px; }
+    .login .card { margin: 0 16px; padding: 22px 18px; }
+    .pw-wrap { position: relative; }
+    .pw-wrap button { position: absolute; right: 6px; top: 6px; height: 34px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+    .alert { border-radius: 12px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+    .alert-err { background: var(--red-soft); color: var(--red); }
+    .demo { margin: 16px; padding: 12px 14px; border-radius: 12px; background: #fff; border: 1px dashed var(--line); font-size: 13px; color: var(--muted); }
+    .demo b { color: var(--text); }
+    .demo button { margin-top: 8px; }
+
+    /* ---------- results ---------- */
+    .summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .summary h2 { font-size: 17px; margin: 0; }
+    .filter-tags { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin: 0 -16px 12px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; }
+    .filter-tags span { flex: none; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; color: var(--muted); }
+
+    .result { padding: 0; overflow: hidden; margin-bottom: 14px; }
+    .result-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600;
+    }
+    .result-body { padding: 14px 16px 6px; }
+    .r-code { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+    .r-title { font-size: 16px; font-weight: 700; margin: 2px 0 2px; }
+    .r-price { font-size: 18px; font-weight: 700; color: var(--brand); }
+    .r-price small { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+    .status-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .st-available { background: var(--green-soft); color: var(--green); }
+    .st-reserved  { background: var(--amber-soft); color: var(--amber); }
+    .st-rented    { background: var(--red-soft); color: var(--red); }
+    .st-waiting   { background: var(--blue-soft); color: var(--blue); }
+    .st-noanswer  { background: var(--gray-soft); color: var(--gray); }
+
+    .block { border-top: 1px dashed var(--line); padding: 10px 0; }
+    .block-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    .kv { display: grid; grid-template-columns: 22px 1fr; gap: 2px 6px; font-size: 14px; }
+    .kv .k { text-align: center; }
+    .kv a { color: var(--blue); text-decoration: none; word-break: break-all; }
+    .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 14px; }
+    .transit li { display: flex; justify-content: space-between; gap: 8px; }
+    .transit ul { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+    .transit .m { color: var(--muted); white-space: nowrap; }
+    .dates { font-size: 13px; }
+    .dates b { color: var(--text); }
+    .link-row { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+    .link-row a { color: var(--blue); word-break: break-all; text-decoration: none; }
+
+    .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+    .actions .btn { height: 56px; flex-direction: column; gap: 2px; font-size: 12px; padding: 0 4px; }
+    .actions .btn svg { width: 20px; height: 20px; }
+    .btn-call { background: var(--green); }
+    .btn-status { background: var(--amber-soft); color: #92400e; }
+    .btn-date { background: var(--blue-soft); color: var(--blue); }
+    .operator {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fafbfc;
+      border-top: 1px solid var(--line); font-size: 12px; color: var(--muted);
+    }
+    .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: none; }
+    .operator b { color: var(--text); font-weight: 600; }
+    .copy-btn { margin-left: auto; border: 0; background: none; color: var(--brand); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px; }
+
+    .empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+    .empty .big { font-size: 44px; }
+
+    /* ---------- settings ---------- */
+    .profile { display: flex; align-items: center; gap: 14px; }
+    .profile .avatar { width: 60px; height: 60px; font-size: 22px; }
+    .profile h3 { margin: 0; font-size: 18px; }
+    .role-tag { display: inline-block; margin-top: 4px; background: var(--brand-soft); color: var(--brand); border-radius: 99px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+    .list { padding: 0; overflow: hidden; }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .list-item:last-child { border-bottom: 0; }
+    .list-item .ic { width: 36px; height: 36px; border-radius: 10px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; flex: none; }
+    .list-item .ic svg { width: 18px; height: 18px; }
+    .list-item .lbl { font-size: 12px; color: var(--muted); }
+    .list-item .val { font-weight: 600; word-break: break-all; }
+    .version { text-align: center; font-size: 12px; color: var(--muted); margin-top: 16px; }
+
+    /* ---------- bottom sheet ---------- */
+    .sheet-bg {
+      position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 50;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .sheet-bg.open { opacity: 1; pointer-events: auto; }
+    .sheet {
+      width: 100%; max-width: 440px; background: #fff; border-radius: 20px 20px 0 0;
+      padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+      transform: translateY(100%); transition: transform .25s ease; max-height: 85vh; overflow: auto;
+    }
+    .sheet-bg.open .sheet { transform: none; }
+    .grabber { width: 40px; height: 4px; background: var(--line); border-radius: 4px; margin: 4px auto 12px; }
+    .sheet h3 { margin: 0 0 4px; font-size: 17px; }
+    .sheet .muted { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .opt-list { display: grid; gap: 8px; }
+    .opt-list .btn { justify-content: flex-start; height: 52px; }
+    .opt-list .btn .end { margin-left: auto; font-size: 12px; font-weight: 500; opacity: .8; }
+    .opt-list .btn.current { outline: 2px solid currentColor; outline-offset: -2px; }
+
+    .toast {
+      position: fixed; left: 50%; top: calc(72px + env(safe-area-inset-top));
+      transform: translate(-50%, -12px); background: #0f172a; color: #fff; padding: 10px 16px;
+      border-radius: 12px; font-size: 14px; z-index: 60; opacity: 0; transition: .2s; pointer-events: none;
+      max-width: calc(100% - 32px);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ================= LOGIN ================= -->
+  <section id="view-login" class="login hidden">
+    <div class="login-head">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg>
+      </div>
+      <h2>CF ห้องว่าง</h2>
+      <p>ระบบสำหรับแอดมินโทรยืนยันสถานะห้อง</p>
+    </div>
+    <form class="card" id="loginForm" novalidate>
+      <h3 style="margin:0 0 4px">เข้าสู่ระบบ</h3>
+      <p style="margin:0 0 16px;color:var(--muted);font-size:13px">กรอกอีเมลและรหัสผ่านของแอดมิน</p>
+      <div id="loginErr" class="alert alert-err hidden"></div>
+      <div class="field">
+        <label for="lEmail">อีเมล</label>
+        <input class="input" id="lEmail" type="email" autocomplete="username" placeholder="name@company.com">
+      </div>
+      <div class="field">
+        <label for="lPass">รหัสผ่าน</label>
+        <div class="pw-wrap">
+          <input class="input" id="lPass" type="password" autocomplete="current-password" placeholder="••••••">
+          <button type="button" id="togglePw">แสดง</button>
+        </div>
+      </div>
+      <button class="btn btn-block" type="submit">เข้าสู่ระบบ</button>
+    </form>
+    <div class="demo">
+      บัญชีทดลอง<br>
+      <b>admin@demo.com</b> / <b>1234</b> (แอดมินโทร CF)<br>
+      <b>lead@demo.com</b> / <b>1234</b> (หัวหน้าทีม)
+      <div><button type="button" class="btn btn-sm btn-ghost" id="fillDemo">กรอกบัญชีทดลอง</button></div>
+    </div>
+  </section>
+
+  <!-- ================= MAIN SHELL ================= -->
+  <div id="shell" class="hidden" style="display:flex;flex-direction:column;flex:1">
+    <header class="topbar">
+      <button class="icon-btn hidden" id="backBtn" aria-label="ย้อนกลับ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 id="pageTitle">เช็คสถานะห้อง<span class="sub">ฟอร์มหาห้องให้ลูกค้า</span></h1>
+      <button class="icon-btn" id="topAvatar" aria-label="ตั้งค่า"></button>
+    </header>
+
+    <main>
+      <!-- ---------- PAGE 1 : SEARCH FORM ---------- -->
+      <section id="view-search">
+        <form class="card" id="searchForm" novalidate>
+          <div class="field">
+            <label for="fLocation"><span class="no">1.</span>โลเคชั่น</label>
+            <select class="input" id="fLocation"></select>
+          </div>
+
+          <div class="field">
+            <label><span class="no">2.</span>งบประมาณ <span class="opt">(บาท/เดือน)</span></label>
+            <div class="row2">
+              <input class="input" id="fBudgetMin" type="number" inputmode="numeric" placeholder="ต่ำสุด">
+              <input class="input" id="fBudgetMax" type="number" inputmode="numeric" placeholder="สูงสุด">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="fStationInput"><span class="no">3.</span>ใกล้ BTS/MRT <span class="opt">(ไม่เกิน 3 สถานี)</span></label>
+            <input class="input" id="fStationInput" type="text" placeholder="พิมพ์ชื่อสถานี เช่น อโศก" autocomplete="off">
+            <div class="suggest hidden" id="stationSuggest"></div>
+            <div class="chips" id="stationChips"></div>
+          </div>
+
+          <div class="field">
+            <label><span class="no">4.</span>ใกล้ BTS กี่เมตร</label>
+            <div class="seg" data-seg="distance">
+              <button type="button" data-v="">ไม่ระบุ</button>
+              <button type="button" data-v="300">300</button>
+              <button type="button" data-v="500">500</button>
+              <button type="button" data-v="1000">1,000</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="no">5.</span>จำนวนห้องนอน <span class="opt">(ไม่บังคับ)</span></label>
+            <div class="seg" data-seg="bed">
+              <button type="button" data-v="">ไม่ระบุ</button>
+              <button type="button" data-v="0">Studio</button>
+              <button type="button" data-v="1">1</button>
+              <button type="button" data-v="2">2</button>
+              <button type="button" data-v="3">3+</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="no">6.</span>จำนวนห้องน้ำ <span class="opt">(ไม่บังคับ)</span></label>
+            <div class="seg" data-seg="bath">
+              <button type="button" data-v="">ไม่ระบุ</button>
+              <button type="button" data-v="1">1</button>
+              <button type="button" data-v="2">2</button>
+              <button type="button" data-v="3">3+</button>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label for="fSize"><span class="no">7.</span>ขนาด <span class="opt">(ไม่บังคับ)</span></label>
+              <input class="input" id="fSize" type="number" inputmode="numeric" placeholder="ตั้งแต่ ตร.ม.">
+            </div>
+            <div class="field">
+              <label for="fFloor"><span class="no">8.</span>ชั้น <span class="opt">(ไม่บังคับ)</span></label>
+              <input class="input" id="fFloor" type="number" inputmode="numeric" placeholder="ตั้งแต่ชั้น">
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="no">9.</span>ประเภทที่พัก</label>
+            <div class="seg" data-seg="type">
+              <button type="button" data-v="">ทั้งหมด</button>
+              <button type="button" data-v="House">บ้าน</button>
+              <button type="button" data-v="Condo">คอนโด</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="no">10.</span>อนุญาตให้เลี้ยงสัตว์</label>
+            <div class="seg" data-seg="pet">
+              <button type="button" data-v="">ไม่ระบุ</button>
+              <button type="button" data-v="yes">ใช่</button>
+              <button type="button" data-v="no">ไม่</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="fStatus"><span class="no">11.</span>สถานะห้อง</label>
+            <select class="input" id="fStatus"></select>
+          </div>
+
+          <div class="field" style="margin-bottom:0">
+            <label><span class="no">12.</span>ต้องการเช็คห้องช่วงเวลาไหน</label>
+            <div class="row2">
+              <input class="input" id="fDateFrom" type="date" aria-label="ตั้งแต่วันที่">
+              <input class="input" id="fDateTo" type="date" aria-label="ถึงวันที่">
+            </div>
+            <div class="hint">ห้องที่ว่าง (Available Date) อยู่ในช่วงวันที่นี้</div>
+          </div>
+        </form>
+
+        <div class="sticky-actions">
+          <button class="btn btn-ghost" id="resetBtn" type="button" style="flex:0 0 auto">ล้าง</button>
+          <button class="btn" id="searchBtn" type="button" style="flex:1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            ค้นหาห้อง
+          </button>
+        </div>
+      </section>
+
+      <!-- ---------- RESULTS ---------- -->
+      <section id="view-results" class="hidden">
+        <div class="summary">
+          <h2 id="resultCount">พบ 0 ห้อง</h2>
+          <button class="btn btn-sm btn-outline" id="copyAllBtn" type="button">คัดลอกทั้งหมด</button>
+        </div>
+        <div class="filter-tags" id="filterTags"></div>
+        <div id="resultList"></div>
+      </section>
+
+      <!-- ---------- SETTINGS ---------- -->
+      <section id="view-settings" class="hidden">
+        <div class="card profile">
+          <div class="avatar" id="sAvatar"></div>
+          <div>
+            <h3 id="sName"></h3>
+            <span class="role-tag" id="sRole"></span>
+          </div>
+        </div>
+
+        <div class="section-title">ข้อมูลบัญชี</div>
+        <div class="card list">
+          <div class="list-item">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>
+            <div><div class="lbl">ชื่อบัญชี</div><div class="val" id="sName2"></div></div>
+          </div>
+          <div class="list-item">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
+            <div><div class="lbl">อีเมล</div><div class="val" id="sEmail"></div></div>
+          </div>
+          <div class="list-item">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
+            <div><div class="lbl">ตำแหน่ง</div><div class="val" id="sPosition"></div></div>
+          </div>
+        </div>
+
+        <div class="section-title">อื่น ๆ</div>
+        <div class="card list">
+          <div class="list-item">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 109-9 9.7 9.7 0 00-6.7 2.8L3 8"/><path d="M3 3v5h5"/></svg></div>
+            <div style="flex:1"><div class="val">รีเซ็ตข้อมูลตัวอย่าง</div><div class="lbl">ล้างสถานะห้องที่แก้ไขไว้ในเครื่องนี้</div></div>
+            <button class="btn btn-sm btn-ghost" id="resetDataBtn" type="button">รีเซ็ต</button>
+          </div>
+        </div>
+
+        <button class="btn btn-block btn-danger" id="logoutBtn" type="button" style="margin-top:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          ออกจากระบบ
+        </button>
+        <div class="version">CF ห้องว่าง · Mockup v0.1</div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button data-nav="search" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        เช็คสถานะห้อง
+      </button>
+      <button data-nav="results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+        <span class="badge hidden" id="resultBadge">0</span>
+        รายการโทร
+      </button>
+      <button data-nav="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+        ตั้งค่า
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- bottom sheet -->
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="grabber"></div>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+   *  Mock data (ยังไม่มี backend)
+   * ======================================================= */
+  const USERS = [
+    { email: 'admin@demo.com', password: '1234', name: 'สมหญิง ใจดี', nick: 'หญิง', position: 'แอดมินโทร CF' },
+    { email: 'lead@demo.com',  password: '1234', name: 'กิตติพัฒน์ มั่นคง', nick: 'กิต', position: 'หัวหน้าทีมแอดมิน' }
+  ];
+
+  const LINES = {
+    'Sukhumvit Line': { th: 'BTS สายสุขุมวิท', color: '#7cb342', mode: 'BTS' },
+    'Silom Line':     { th: 'BTS สายสีลม',    color: '#00796b', mode: 'BTS' },
+    'Blue Line':      { th: 'MRT สายสีน้ำเงิน', color: '#1e40af', mode: 'MRT' },
+    'Purple Line':    { th: 'MRT สายสีม่วง',   color: '#7e22ce', mode: 'MRT' },
+    'Airport Rail Link': { th: 'แอร์พอร์ต ลิงก์', color: '#b91c1c', mode: 'ARL' }
+  };
+
+  const STATIONS = [
+    ['BTS', 'Nana', 'นานา', 'Sukhumvit Line'],
+    ['BTS', 'Asok', 'อโศก', 'Sukhumvit Line'],
+    ['BTS', 'Phrom Phong', 'พร้อมพงษ์', 'Sukhumvit Line'],
+    ['BTS', 'Thong Lo', 'ทองหล่อ', 'Sukhumvit Line'],
+    ['BTS', 'Ekkamai', 'เอกมัย', 'Sukhumvit Line'],
+    ['BTS', 'Phra Khanong', 'พระโขนง', 'Sukhumvit Line'],
+    ['BTS', 'On Nut', 'อ่อนนุช', 'Sukhumvit Line'],
+    ['BTS', 'Punnawithi', 'ปุณณวิถี', 'Sukhumvit Line'],
+    ['BTS', 'Chit Lom', 'ชิดลม', 'Sukhumvit Line'],
+    ['BTS', 'Phloen Chit', 'เพลินจิต', 'Sukhumvit Line'],
+    ['BTS', 'Ari', 'อารีย์', 'Sukhumvit Line'],
+    ['BTS', 'Ratchathewi', 'ราชเทวี', 'Sukhumvit Line'],
+    ['BTS', 'Sala Daeng', 'ศาลาแดง', 'Silom Line'],
+    ['BTS', 'Chong Nonsi', 'ช่องนนทรี', 'Silom Line'],
+    ['BTS', 'Surasak', 'สุรศักดิ์', 'Silom Line'],
+    ['MRT', 'Sukhumvit', 'สุขุมวิท', 'Blue Line'],
+    ['MRT', 'Queen Sirikit', 'ศูนย์ฯ สิริกิติ์', 'Blue Line'],
+    ['MRT', 'Phetchaburi', 'เพชรบุรี', 'Blue Line'],
+    ['MRT', 'Phra Ram 9', 'พระราม 9', 'Blue Line'],
+    ['MRT', 'Huai Khwang', 'ห้วยขวาง', 'Blue Line'],
+    ['MRT', 'Lumphini', 'ลุมพินี', 'Blue Line'],
+    ['MRT', 'Si Lom', 'สีลม', 'Blue Line'],
+    ['ARL', 'Makkasan', 'มักกะสัน', 'Airport Rail Link']
+  ].map(([mode, en, th, line]) => ({ id: mode + ':' + en, mode, en, th, line }));
+
+  const LOCATIONS = [
+    'Sukhumvit', 'Asok', 'Phrom Phong', 'Prasan Mit', 'Nana', 'Thonglor', 'Ekkamai',
+    'Phra Khanong', 'On Nut', 'Ploenchit', 'Chidlom', 'Silom', 'Sathorn', 'Ari',
+    'Ratchathewi', 'Rama 9', 'Ratchada', 'Makkasan', 'Bang Na'
+  ];
+
+  const STATUSES = [
+    { key: 'available', en: 'Available',      th: 'ว่าง',              emoji: '🟢', cls: 'st-available', btn: 'btn-call' },
+    { key: 'reserved',  en: 'Reserved',       th: 'ติดจอง',            emoji: '🟡', cls: 'st-reserved' },
+    { key: 'rented',    en: 'Rented',         th: 'ไม่ว่าง / ปล่อยแล้ว', emoji: '🔴', cls: 'st-rented' },
+    { key: 'waiting',   en: 'Waiting',        th: 'รอเจ้าของยืนยัน',     emoji: '🔵', cls: 'st-waiting' },
+    { key: 'noanswer',  en: 'No answer',      th: 'ติดต่อไม่ได้',        emoji: '⚪', cls: 'st-noanswer' }
+  ];
+  const statusOf = k => STATUSES.find(s => s.key === k) || STATUSES[0];
+
+  const SEED = [
+    { code: 'B5032', project: 'Edge Sukhumvit 23', projectTh: 'เอดจ์ สุขุมวิท23', rent: 28000,
+      phones: ['081-234-5601', '089-765-4301'], line: 'edge23owner', facebook: 'Edge Sukhumvit 23 Owner',
+      transit: [['MRT:Sukhumvit', 150], ['BTS:Asok', 250], ['BTS:Nana', 900]],
+      size: 33, floor: 14, bed: 1, bath: 1, type: 'Condo', status: 'available', pet: false,
+      locations: ['Sukhumvit', 'Asok', 'Phrom Phong', 'Prasan Mit'],
+      available: '2026-09-23', updated: '2026-09-23T13:00', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/9cb2228d-9bd8-4934-a584-2e05a2a19d1f/info' },
+    { code: 'B5047', project: 'The Lofts Asoke', projectTh: 'เดอะ ลอฟท์ อโศก', rent: 32000,
+      phones: ['086-112-2033'], line: 'loftsasoke', facebook: '',
+      transit: [['MRT:Phetchaburi', 100], ['BTS:Asok', 800], ['ARL:Makkasan', 950]],
+      size: 41, floor: 22, bed: 1, bath: 1, type: 'Condo', status: 'available', pet: false,
+      locations: ['Asok', 'Sukhumvit', 'Makkasan'],
+      available: '2026-10-15', updated: '2026-10-07T10:20', updatedBy: 'กิตติพัฒน์ มั่นคง',
+      link: 'https://thaolai.com/assets/b5047/info' },
+    { code: 'B5101', project: 'Noble Refine', projectTh: 'โนเบิล รีไฟน์', rent: 45000,
+      phones: ['081-998-7712', '02-123-4567'], line: '', facebook: 'Noble Refine Rental',
+      transit: [['BTS:Phrom Phong', 200], ['BTS:Thong Lo', 1200]],
+      size: 55, floor: 18, bed: 2, bath: 2, type: 'Condo', status: 'reserved', pet: false,
+      locations: ['Phrom Phong', 'Sukhumvit', 'Prasan Mit'],
+      available: '2026-11-01', updated: '2026-10-08T16:45', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5101/info' },
+    { code: 'B5118', project: 'Rhythm Sukhumvit 36-38', projectTh: 'ริทึ่ม สุขุมวิท 36-38', rent: 25000,
+      phones: ['092-334-8890'], line: 'rhythm3638', facebook: '',
+      transit: [['BTS:Thong Lo', 50], ['BTS:Phrom Phong', 1100]],
+      size: 30, floor: 9, bed: 1, bath: 1, type: 'Condo', status: 'available', pet: true,
+      locations: ['Thonglor', 'Sukhumvit'],
+      available: '2026-10-12', updated: '2026-10-09T09:05', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5118/info' },
+    { code: 'B5124', project: 'Ashton Asoke', projectTh: 'แอชตัน อโศก', rent: 38000,
+      phones: ['084-556-1020'], line: 'ashtonasoke.rent', facebook: 'Ashton Asoke For Rent',
+      transit: [['MRT:Sukhumvit', 50], ['BTS:Asok', 100], ['BTS:Nana', 950]],
+      size: 34, floor: 31, bed: 1, bath: 1, type: 'Condo', status: 'waiting', pet: false,
+      locations: ['Asok', 'Sukhumvit', 'Prasan Mit'],
+      available: '2026-10-20', updated: '2026-10-08T11:30', updatedBy: 'กิตติพัฒน์ มั่นคง',
+      link: 'https://thaolai.com/assets/b5124/info' },
+    { code: 'H2015', project: 'บ้านเดี่ยว สุขุมวิท 49', projectTh: 'Single House Sukhumvit 49', rent: 85000,
+      phones: ['081-445-7766', '081-445-7767'], line: 'house49', facebook: '',
+      transit: [['BTS:Thong Lo', 1300], ['BTS:Phrom Phong', 1600]],
+      size: 280, floor: 2, bed: 3, bath: 4, type: 'House', status: 'available', pet: true,
+      locations: ['Thonglor', 'Phrom Phong', 'Sukhumvit'],
+      available: '2026-11-15', updated: '2026-10-05T14:10', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/h2015/info' },
+    { code: 'B5133', project: 'Life One Wireless', projectTh: 'ไลฟ์ วัน ไวร์เลส', rent: 30000,
+      phones: ['095-221-4400'], line: '', facebook: 'Life One Wireless Owner',
+      transit: [['BTS:Phloen Chit', 450], ['BTS:Chit Lom', 900], ['MRT:Lumphini', 1300]],
+      size: 35, floor: 27, bed: 1, bath: 1, type: 'Condo', status: 'noanswer', pet: false,
+      locations: ['Ploenchit', 'Chidlom'],
+      available: '2026-10-10', updated: '2026-10-09T08:40', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5133/info' },
+    { code: 'B5140', project: 'Noble Around Ari', projectTh: 'โนเบิล อราวด์ อารีย์', rent: 22000,
+      phones: ['088-610-3355'], line: 'aroundari', facebook: '',
+      transit: [['BTS:Ari', 120]],
+      size: 31, floor: 12, bed: 1, bath: 1, type: 'Condo', status: 'available', pet: true,
+      locations: ['Ari'],
+      available: '2026-10-18', updated: '2026-10-08T17:15', updatedBy: 'กิตติพัฒน์ มั่นคง',
+      link: 'https://thaolai.com/assets/b5140/info' },
+    { code: 'B5152', project: 'Rhythm Sathorn', projectTh: 'ริทึ่ม สาทร', rent: 27000,
+      phones: ['082-776-5012'], line: 'rhythmsathorn', facebook: 'Rhythm Sathorn Rent',
+      transit: [['BTS:Surasak', 300], ['BTS:Chong Nonsi', 1400]],
+      size: 45, floor: 20, bed: 1, bath: 1, type: 'Condo', status: 'rented', pet: false,
+      locations: ['Sathorn', 'Silom'],
+      available: '2027-01-05', updated: '2026-10-06T12:00', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5152/info' },
+    { code: 'B5160', project: 'Whizdom Connect Sukhumvit', projectTh: 'วิสดอม คอนเนค สุขุมวิท', rent: 18000,
+      phones: ['091-887-2210'], line: 'whizdom101', facebook: '',
+      transit: [['BTS:Punnawithi', 80], ['BTS:On Nut', 2600]],
+      size: 28, floor: 33, bed: 1, bath: 1, type: 'Condo', status: 'available', pet: false,
+      locations: ['Bang Na', 'On Nut'],
+      available: '2026-10-25', updated: '2026-10-09T11:00', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5160/info' },
+    { code: 'B5171', project: 'Ideo Mobi Asoke', projectTh: 'ไอดีโอ โมบิ อโศก', rent: 20000,
+      phones: ['086-450-9981'], line: '', facebook: 'Ideo Mobi Asoke Room',
+      transit: [['MRT:Phetchaburi', 150], ['ARL:Makkasan', 300], ['BTS:Asok', 1400]],
+      size: 26, floor: 16, bed: 0, bath: 1, type: 'Condo', status: 'available', pet: false,
+      locations: ['Asok', 'Makkasan', 'Ratchada'],
+      available: '2026-10-11', updated: '2026-10-08T15:25', updatedBy: 'กิตติพัฒน์ มั่นคง',
+      link: 'https://thaolai.com/assets/b5171/info' },
+    { code: 'B5188', project: 'Supalai Veranda Rama 9', projectTh: 'ศุภาลัย เวอเรนด้า พระราม 9', rent: 35000,
+      phones: ['089-012-3456'], line: 'veranda9', facebook: '',
+      transit: [['MRT:Phra Ram 9', 450], ['MRT:Phetchaburi', 1500]],
+      size: 68, floor: 25, bed: 2, bath: 2, type: 'Condo', status: 'available', pet: true,
+      locations: ['Rama 9', 'Ratchada'],
+      available: '2026-10-30', updated: '2026-10-07T18:00', updatedBy: 'สมหญิง ใจดี',
+      link: 'https://thaolai.com/assets/b5188/info' }
+  ];
+
+  /* =========================================================
+   *  Storage (wrapped — page must work without it)
+   * ======================================================= */
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  const K_USER = 'cfroom.user', K_DATA = 'cfroom.listings', K_FILTER = 'cfroom.filter';
+
+  let listings = store.get(K_DATA, null) || JSON.parse(JSON.stringify(SEED));
+  let user = store.get(K_USER, null);
+  let filter = store.get(K_FILTER, null) || defaultFilter();
+  let results = [];
+  let hasSearched = false;
+
+  function defaultFilter() {
+    return { location: '', budgetMin: '', budgetMax: '', stations: [], distance: '', bed: '', bath: '',
+             size: '', floor: '', type: '', pet: '', status: '', dateFrom: '', dateTo: '' };
+  }
+  const saveListings = () => store.set(K_DATA, listings);
+
+  /* =========================================================
+   *  Helpers
+   * ======================================================= */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pad = n => String(n).padStart(2, '0');
+  function fmtDate(iso) {
+    if (!iso) return '-';
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+    return d + ' ' + MONTHS[m - 1] + ' ' + y;
+  }
+  function fmtDateTime(iso) { return fmtDate(iso) + ' | ' + (iso.slice(11, 16) || '00:00'); }
+  function nowIso() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  const money = n => Number(n).toLocaleString('en-US');
+  const stationById = id => STATIONS.find(s => s.id === id);
+  const initials = name => (name || '?').trim().charAt(0);
+  const telHref = p => 'tel:' + p.replace(/[^0-9+]/g, '');
+
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  async function copyText(txt) {
+    try { await navigator.clipboard.writeText(txt); toast('คัดลอกแล้ว'); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('คัดลอกแล้ว'); } catch (e2) { toast('คัดลอกไม่สำเร็จ'); }
+      ta.remove();
+    }
+  }
+
+  /* =========================================================
+   *  Auth
+   * ======================================================= */
+  function showLogin() {
+    $('#view-login').classList.remove('hidden');
+    $('#shell').classList.add('hidden');
+  }
+  function showApp() {
+    $('#view-login').classList.add('hidden');
+    $('#shell').classList.remove('hidden');
+    $('#topAvatar').textContent = initials(user.name);
+    $('#topAvatar').style.fontWeight = '700';
+    fillSettings();
+    go('search');
+  }
+  $('#loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = $('#lEmail').value.trim().toLowerCase();
+    const pass = $('#lPass').value;
+    const err = $('#loginErr');
+    if (!email || !pass) { err.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; err.classList.remove('hidden'); return; }
+    const u = USERS.find(x => x.email === email && x.password === pass);
+    if (!u) { err.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'; err.classList.remove('hidden'); return; }
+    err.classList.add('hidden');
+    user = { email: u.email, name: u.name, nick: u.nick, position: u.position };
+    store.set(K_USER, user);
+    $('#lPass').value = '';
+    showApp();
+    toast('ยินดีต้อนรับ ' + u.name);
+  });
+  $('#fillDemo').addEventListener('click', () => { $('#lEmail').value = 'admin@demo.com'; $('#lPass').value = '1234'; });
+  $('#togglePw').addEventListener('click', e => {
+    const i = $('#lPass'); const show = i.type === 'password';
+    i.type = show ? 'text' : 'password'; e.target.textContent = show ? 'ซ่อน' : 'แสดง';
+  });
+  $('#logoutBtn').addEventListener('click', () => {
+    openSheet(`
+      <h3>ออกจากระบบ?</h3>
+      <p class="muted">คุณต้องการออกจากบัญชี ${esc(user.email)} ใช่ไหม</p>
+      <div class="row2">
+        <button class="btn btn-ghost" data-close>ยกเลิก</button>
+        <button class="btn" style="background:var(--red)" id="confirmLogout">ออกจากระบบ</button>
+      </div>`);
+    $('#confirmLogout').addEventListener('click', () => {
+      closeSheet(); store.del(K_USER); user = null; showLogin(); toast('ออกจากระบบแล้ว');
+    });
+  });
+
+  function fillSettings() {
+    $('#sAvatar').textContent = initials(user.name);
+    $('#sName').textContent = user.name;
+    $('#sName2').textContent = user.name + (user.nick ? ' (' + user.nick + ')' : '');
+    $('#sRole').textContent = user.position;
+    $('#sEmail').textContent = user.email;
+    $('#sPosition').textContent = user.position;
+  }
+  $('#resetDataBtn').addEventListener('click', () => {
+    listings = JSON.parse(JSON.stringify(SEED)); store.del(K_DATA);
+    if (hasSearched) runSearch(false);
+    toast('รีเซ็ตข้อมูลตัวอย่างแล้ว');
+  });
+
+  /* =========================================================
+   *  Navigation
+   * ======================================================= */
+  const TITLES = {
+    search:   ['เช็คสถานะห้อง', 'ฟอร์มหาห้องให้ลูกค้า'],
+    results:  ['รายการโทร CF', 'ผลลัพธ์จากฟอร์มค้นหา'],
+    settings: ['ตั้งค่า', 'ข้อมูลบัญชีผู้ใช้']
+  };
+  function go(view) {
+    ['search', 'results', 'settings'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    $$('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
+    $('#pageTitle').innerHTML = esc(TITLES[view][0]) + '<span class="sub">' + esc(TITLES[view][1]) + '</span>';
+    $('#backBtn').classList.toggle('hidden', view !== 'results');
+    if (view === 'results' && !hasSearched) runSearch(false);
+    window.scrollTo(0, 0);
+  }
+  $$('.bottom-nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.nav)));
+  $('#backBtn').addEventListener('click', () => go('search'));
+  $('#topAvatar').addEventListener('click', () => go('settings'));
+
+  /* =========================================================
+   *  Search form
+   * ======================================================= */
+  $('#fLocation').innerHTML = '<option value="">ทุกโลเคชั่น</option>' + LOCATIONS.map(l => `<option>${esc(l)}</option>`).join('');
+  $('#fStatus').innerHTML = '<option value="">ทุกสถานะ</option>' + STATUSES.map(s => `<option value="${s.key}">${s.emoji} ${esc(s.th)} (${esc(s.en)})</option>`).join('');
+
+  function writeForm() {
+    $('#fLocation').value = filter.location;
+    $('#fBudgetMin').value = filter.budgetMin;
+    $('#fBudgetMax').value = filter.budgetMax;
+    $('#fSize').value = filter.size;
+    $('#fFloor').value = filter.floor;
+    $('#fStatus').value = filter.status;
+    $('#fDateFrom').value = filter.dateFrom;
+    $('#fDateTo').value = filter.dateTo;
+    $$('[data-seg]').forEach(seg => {
+      const key = seg.dataset.seg;
+      seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(filter[key])));
+    });
+    renderChips();
+  }
+  function readForm() {
+    filter.location = $('#fLocation').value;
+    filter.budgetMin = $('#fBudgetMin').value;
+    filter.budgetMax = $('#fBudgetMax').value;
+    filter.size = $('#fSize').value;
+    filter.floor = $('#fFloor').value;
+    filter.status = $('#fStatus').value;
+    filter.dateFrom = $('#fDateFrom').value;
+    filter.dateTo = $('#fDateTo').value;
+  }
+  $$('[data-seg]').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    filter[seg.dataset.seg] = b.dataset.v;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  }));
+
+  // stations (max 3)
+  function renderChips() {
+    $('#stationChips').innerHTML = filter.stations.map(id => {
+      const s = stationById(id); if (!s) return '';
+      return `<span class="chip"><span class="line-dot" style="background:${LINES[s.line].color}"></span>${esc(s.mode)} ${esc(s.th)}<button type="button" data-rm="${esc(id)}" aria-label="ลบ">×</button></span>`;
+    }).join('');
+    const full = filter.stations.length >= 3;
+    $('#fStationInput').disabled = full;
+    $('#fStationInput').placeholder = full ? 'เลือกครบ 3 สถานีแล้ว' : 'พิมพ์ชื่อสถานี เช่น อโศก';
+  }
+  $('#stationChips').addEventListener('click', e => {
+    const id = e.target.dataset && e.target.dataset.rm; if (!id) return;
+    filter.stations = filter.stations.filter(x => x !== id); renderChips();
+  });
+  function renderSuggest() {
+    const q = $('#fStationInput').value.trim().toLowerCase();
+    const box = $('#stationSuggest');
+    const list = STATIONS.filter(s => !filter.stations.includes(s.id) &&
+      (!q || s.en.toLowerCase().includes(q) || s.th.includes(q) || s.mode.toLowerCase().includes(q))).slice(0, 8);
+    if (!list.length) { box.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:13px">ไม่พบสถานี</div>'; }
+    else box.innerHTML = list.map(s => `<button type="button" data-add="${esc(s.id)}"><span class="line-dot" style="background:${LINES[s.line].color}"></span><span><b>${esc(s.mode)} ${esc(s.th)}</b> <span style="color:var(--muted);font-size:12px">${esc(s.en)} · ${esc(LINES[s.line].th)}</span></span></button>`).join('');
+    box.classList.remove('hidden');
+  }
+  $('#fStationInput').addEventListener('focus', renderSuggest);
+  $('#fStationInput').addEventListener('input', renderSuggest);
+  $('#fStationInput').addEventListener('blur', () => setTimeout(() => $('#stationSuggest').classList.add('hidden'), 150));
+  $('#stationSuggest').addEventListener('mousedown', e => e.preventDefault());
+  $('#stationSuggest').addEventListener('click', e => {
+    const b = e.target.closest('[data-add]'); if (!b) return;
+    if (filter.stations.length >= 3) return toast('เลือกได้ไม่เกิน 3 สถานี');
+    filter.stations.push(b.dataset.add);
+    $('#fStationInput').value = '';
+    renderChips();
+    if (filter.stations.length >= 3) { $('#stationSuggest').classList.add('hidden'); $('#fStationInput').blur(); }
+    else renderSuggest();
+  });
+
+  $('#resetBtn').addEventListener('click', () => { filter = defaultFilter(); store.del(K_FILTER); writeForm(); toast('ล้างเงื่อนไขแล้ว'); });
+  $('#searchBtn').addEventListener('click', () => { runSearch(true); });
+
+  function matches(l, f) {
+    if (f.location && !l.locations.includes(f.location)) return false;
+    if (f.budgetMin && l.rent < +f.budgetMin) return false;
+    if (f.budgetMax && l.rent > +f.budgetMax) return false;
+    if (f.stations.length) {
+      const near = l.transit.filter(([id, m]) => f.stations.includes(id) && (!f.distance || m <= +f.distance));
+      if (!near.length) return false;
+    } else if (f.distance) {
+      if (!l.transit.some(([, m]) => m <= +f.distance)) return false;
+    }
+    if (f.bed !== '') { if (f.bed === '3' ? l.bed < 3 : l.bed !== +f.bed) return false; }
+    if (f.bath !== '') { if (f.bath === '3' ? l.bath < 3 : l.bath !== +f.bath) return false; }
+    if (f.size && l.size < +f.size) return false;
+    if (f.floor && l.floor < +f.floor) return false;
+    if (f.type && l.type !== f.type) return false;
+    if (f.pet === 'yes' && !l.pet) return false;
+    if (f.pet === 'no' && l.pet) return false;
+    if (f.status && l.status !== f.status) return false;
+    if (f.dateFrom && l.available < f.dateFrom) return false;
+    if (f.dateTo && l.available > f.dateTo) return false;
+    return true;
+  }
+
+  function runSearch(navigate) {
+    readForm();
+    store.set(K_FILTER, filter);
+    results = listings.filter(l => matches(l, filter)).sort((a, b) => a.available.localeCompare(b.available));
+    hasSearched = true;
+    renderResults();
+    if (navigate) { go('results'); toast('บอทส่งผลลัพธ์มา ' + results.length + ' ห้อง'); }
+  }
+
+  /* =========================================================
+   *  Results
+   * ======================================================= */
+  function filterTags() {
+    const f = filter, t = [];
+    if (f.location) t.push('📍 ' + f.location);
+    if (f.budgetMin || f.budgetMax) t.push('💰 ' + (f.budgetMin ? money(f.budgetMin) : '0') + ' – ' + (f.budgetMax ? money(f.budgetMax) : 'ไม่จำกัด'));
+    f.stations.forEach(id => { const s = stationById(id); if (s) t.push('🚆 ' + s.mode + ' ' + s.th); });
+    if (f.distance) t.push('≤ ' + money(f.distance) + ' ม.');
+    if (f.bed !== '') t.push('🛏 ' + (f.bed === '0' ? 'Studio' : f.bed === '3' ? '3+' : f.bed));
+    if (f.bath !== '') t.push('🛁 ' + (f.bath === '3' ? '3+' : f.bath));
+    if (f.size) t.push('📐 ≥ ' + f.size + ' ตร.ม.');
+    if (f.floor) t.push('🏢 ชั้น ≥ ' + f.floor);
+    if (f.type) t.push('🏠 ' + (f.type === 'House' ? 'บ้าน' : 'คอนโด'));
+    if (f.pet) t.push('🐶 ' + (f.pet === 'yes' ? 'เลี้ยงสัตว์ได้' : 'ห้ามเลี้ยงสัตว์'));
+    if (f.status) t.push(statusOf(f.status).emoji + ' ' + statusOf(f.status).th);
+    if (f.dateFrom || f.dateTo) t.push('📅 ' + (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…'));
+    return t.length ? t : ['ไม่มีเงื่อนไข (แสดงทั้งหมด)'];
+  }
+
+  function bedLabel(n) { return n === 0 ? 'Studio' : n + ' Bedroom' + (n > 1 ? 's' : ''); }
+  function bathLabel(n) { return n + ' Bathroom' + (n > 1 ? 's' : ''); }
+
+  // plain-text version in the same format the bot sends
+  function toText(l, i, n) {
+    const st = statusOf(l.status);
+    const lines = [
+      `Result ${i}/${n}`, '',
+      `Code: ${l.code}`,
+      `🏢 Project: ${l.project} / ${l.projectTh}`,
+      `💰 Rent: THB ${money(l.rent)}/month`
+    ];
+    const phones = l.phones.length ? l.phones : [''];
+    phones.forEach(p => lines.push(`☎️ เบอร์เจ้าของ : ${p}`));
+    lines.push(`Line เจ้าของ : ${l.line || '-'}`, `Facebook เจ้าของ : ${l.facebook || '-'}`, '', '🚆 Near Transit:');
+    l.transit.forEach(([id, m]) => { const s = stationById(id); lines.push(` 📍${s.mode} ${s.en} (${s.line}) ${money(m)} m`); });
+    lines.push('',
+      `📐 Size: ${l.size} sq.m.`, `🏢 Floor: ${l.floor}`, `🛏 ${bedLabel(l.bed)}`, `🛁 ${bathLabel(l.bath)}`,
+      `🏠 Type: ${l.type}`, `${st.emoji} Status: ${st.en}`, `🐶 Pet-friendly: ${l.pet ? 'Yes' : 'No'}`, '',
+      '📌 Primary location :', l.locations.join(', '), '',
+      `** Available Date: ${fmtDate(l.available)}`, `🕒 Updated: ${fmtDateTime(l.updated)}`, '',
+      ' Link ', l.link, '',
+      `ผู้ดำเนินการ: ${l.updatedBy}`);
+    return lines.join('\n');
+  }
+
+  function cardHtml(l, i, n) {
+    const st = statusOf(l.status);
+    const phones = l.phones.length ? l.phones : ['-'];
+    return `
+    <article class="card result" data-code="${esc(l.code)}">
+      <div class="result-head">
+        <span>Result ${i}/${n}</span>
+        <span class="status-pill ${st.cls}">${esc(st.en)} · ${esc(st.th)}</span>
+      </div>
+      <div class="result-body">
+        <div class="r-code">Code: ${esc(l.code)}</div>
+        <div class="r-title">🏢 ${esc(l.project)} <span style="font-weight:500;color:var(--muted);font-size:14px">/ ${esc(l.projectTh)}</span></div>
+        <div class="r-price">💰 THB ${money(l.rent)}<small>/month</small></div>
+
+        <div class="block" style="margin-top:10px">
+          <div class="block-title">ติดต่อเจ้าของ</div>
+          <div class="kv">
+            ${phones.map(p => `<span class="k">☎️</span><span>เบอร์เจ้าของ : ${p === '-' ? '-' : `<a href="${telHref(p)}">${esc(p)}</a>`}</span>`).join('')}
+            <span class="k">💬</span><span>Line เจ้าของ : ${l.line ? `<a href="https://line.me/ti/p/~${encodeURIComponent(l.line)}" target="_blank" rel="noopener">${esc(l.line)}</a>` : '-'}</span>
+            <span class="k">📘</span><span>Facebook เจ้าของ : ${l.facebook ? esc(l.facebook) : '-'}</span>
+          </div>
+        </div>
+
+        <div class="block transit">
+          <div class="block-title">🚆 Near Transit</div>
+          <ul>
+            ${l.transit.map(([id, m]) => { const s = stationById(id); return `<li><span><span class="line-dot" style="display:inline-block;background:${LINES[s.line].color};margin-right:6px"></span>${esc(s.mode)} ${esc(s.en)} <span style="color:var(--muted);font-size:12px">(${esc(s.line)})</span></span><span class="m">${money(m)} m</span></li>`; }).join('')}
+          </ul>
+        </div>
+
+        <div class="block specs">
+          <span>📐 Size: ${l.size} sq.m.</span>
+          <span>🏢 Floor: ${l.floor}</span>
+          <span>🛏 ${bedLabel(l.bed)}</span>
+          <span>🛁 ${bathLabel(l.bath)}</span>
+          <span>🏠 Type: ${esc(l.type)}</span>
+          <span>🐶 Pet-friendly: ${l.pet ? 'Yes' : 'No'}</span>
+          <span style="grid-column:1/-1">${st.emoji} Status: <b>${esc(st.en)}</b></span>
+        </div>
+
+        <div class="block">
+          <div class="block-title">📌 Primary location</div>
+          <div style="font-size:14px">${l.locations.map(esc).join(', ')}</div>
+        </div>
+
+        <div class="block dates">
+          <div>** Available Date: <b>${fmtDate(l.available)}</b></div>
+          <div style="color:var(--muted)">🕒 Updated: ${fmtDateTime(l.updated)}</div>
+        </div>
+
+        <div class="block link-row">
+          <span>🔗</span><a href="${esc(l.link)}" target="_blank" rel="noopener">${esc(l.link)}</a>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-call" data-act="call" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+          โทร
+        </button>
+        <button class="btn btn-status" data-act="status" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          เปลี่ยนสถานะ
+        </button>
+        <button class="btn btn-date" data-act="date" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          เพิ่มวันที่ว่าง
+        </button>
+      </div>
+
+      <div class="operator">
+        <span class="avatar">${esc(initials(l.updatedBy))}</span>
+        <span>ผู้ดำเนินการ: <b>${esc(l.updatedBy)}</b></span>
+        <button class="copy-btn" data-act="copy" type="button">คัดลอก</button>
+      </div>
+    </article>`;
+  }
+
+  function renderResults() {
+    const n = results.length;
+    $('#resultCount').textContent = 'พบ ' + n + ' ห้อง';
+    $('#filterTags').innerHTML = filterTags().map(t => `<span>${esc(t)}</span>`).join('');
+    $('#resultBadge').textContent = n;
+    $('#resultBadge').classList.toggle('hidden', !n);
+    $('#copyAllBtn').disabled = !n;
+    $('#resultList').innerHTML = n
+      ? results.map((l, i) => cardHtml(l, i + 1, n)).join('')
+      : `<div class="empty"><div class="big">🔍</div><p>ไม่พบห้องที่ตรงกับเงื่อนไข<br>ลองปรับงบประมาณหรือสถานีใหม่</p>
+         <button class="btn btn-outline" type="button" id="editFilter">แก้ไขเงื่อนไข</button></div>`;
+    const ef = $('#editFilter'); if (ef) ef.addEventListener('click', () => go('search'));
+  }
+
+  $('#copyAllBtn').addEventListener('click', () => {
+    copyText(results.map((l, i) => toText(l, i + 1, results.length)).join('\n\n———————————\n\n'));
+  });
+
+  $('#resultList').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const card = b.closest('.result');
+    const l = listings.find(x => x.code === card.dataset.code); if (!l) return;
+    const idx = results.indexOf(l) + 1;
+    ({ call: openCall, status: openStatus, date: openDate, copy: () => copyText(toText(l, idx, results.length)) })[b.dataset.act](l);
+  });
+
+  function touch(l) { l.updated = nowIso(); l.updatedBy = user.name; saveListings(); }
+  function rerenderCard(l) {
+    const card = $(`.result[data-code="${CSS.escape(l.code)}"]`); if (!card) return;
+    const i = results.indexOf(l) + 1;
+    card.outerHTML = cardHtml(l, i, results.length);
+  }
+
+  /* ---------- action sheets (กดแล้วเป็นปุ่มให้เลือก) ---------- */
+  function openCall(l) {
+    if (!l.phones.length) return toast('ไม่มีเบอร์เจ้าของ');
+    openSheet(`
+      <h3>โทรหาเจ้าของ · ${esc(l.code)}</h3>
+      <p class="muted">${esc(l.project)}</p>
+      <div class="opt-list">
+        ${l.phones.map((p, i) => `<a class="btn btn-call" href="${telHref(p)}" style="text-decoration:none">📞 ${esc(p)}<span class="end">เบอร์ ${i + 1}</span></a>`).join('')}
+        ${l.line ? `<a class="btn btn-ghost" href="https://line.me/ti/p/~${encodeURIComponent(l.line)}" target="_blank" rel="noopener" style="text-decoration:none">💬 Line: ${esc(l.line)}</a>` : ''}
+        <button class="btn btn-ghost" data-close>ยกเลิก</button>
+      </div>`);
+  }
+
+  function openStatus(l) {
+    openSheet(`
+      <h3>เปลี่ยนสถานะ · ${esc(l.code)}</h3>
+      <p class="muted">${esc(l.project)} — สถานะปัจจุบัน: ${statusOf(l.status).emoji} ${esc(statusOf(l.status).th)}</p>
+      <div class="opt-list">
+        ${STATUSES.map(s => `<button class="btn ${s.cls}${s.key === l.status ? ' current' : ''}" data-st="${s.key}">${s.emoji} ${esc(s.th)}<span class="end">${esc(s.en)}${s.key === l.status ? ' · ปัจจุบัน' : ''}</span></button>`).join('')}
+        <button class="btn btn-ghost" data-close>ยกเลิก</button>
+      </div>`);
+    $('#sheetContent').querySelectorAll('[data-st]').forEach(btn => btn.addEventListener('click', () => {
+      l.status = btn.dataset.st; touch(l); rerenderCard(l); closeSheet();
+      toast('อัปเดตสถานะ ' + l.code + ' → ' + statusOf(l.status).th);
+    }));
+  }
+
+  function openDate(l) {
+    const base = new Date();
+    const quick = [0, 7, 14, 30].map(d => {
+      const x = new Date(base); x.setDate(x.getDate() + d);
+      return { iso: x.getFullYear() + '-' + pad(x.getMonth() + 1) + '-' + pad(x.getDate()), label: d === 0 ? 'วันนี้' : '+' + d + ' วัน' };
+    });
+    openSheet(`
+      <h3>เพิ่มวันที่ห้องว่าง · ${esc(l.code)}</h3>
+      <p class="muted">ปัจจุบัน: ${fmtDate(l.available)}</p>
+      <div class="seg" style="margin-bottom:12px">
+        ${quick.map(q => `<button type="button" data-q="${q.iso}">${q.label}<br><span style="font-size:11px;color:var(--muted)">${fmtDate(q.iso)}</span></button>`).join('')}
+      </div>
+      <div class="field">
+        <label for="newDate">หรือเลือกวันที่</label>
+        <input class="input" type="date" id="newDate" value="${esc(l.available)}">
+      </div>
+      <div class="row2">
+        <button class="btn btn-ghost" data-close>ยกเลิก</button>
+        <button class="btn" id="saveDate">บันทึก</button>
+      </div>`);
+    const seg = $('#sheetContent .seg');
+    seg.querySelectorAll('[data-q]').forEach(b => b.style.height = '54px');
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('[data-q]'); if (!b) return;
+      $('#newDate').value = b.dataset.q;
+      seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    });
+    $('#saveDate').addEventListener('click', () => {
+      const v = $('#newDate').value; if (!v) return toast('กรุณาเลือกวันที่');
+      l.available = v; touch(l); rerenderCard(l); closeSheet();
+      toast('บันทึกวันที่ว่าง ' + fmtDate(v));
+    });
+  }
+
+  /* ---------- sheet ---------- */
+  function openSheet(html) {
+    $('#sheetContent').innerHTML = html;
+    $('#sheetBg').classList.add('open');
+  }
+  function closeSheet() { $('#sheetBg').classList.remove('open'); }
+  $('#sheetBg').addEventListener('click', e => {
+    if (e.target.id === 'sheetBg' || e.target.closest('[data-close]')) closeSheet();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+  /* =========================================================
+   *  Boot
+   * ======================================================= */
+  writeForm();
+  if (user) showApp(); else showLogin();
+})();
+</script>
+</body>
+</html>
