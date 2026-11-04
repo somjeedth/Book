@@ -11,7 +11,18 @@ python3 -m http.server 8000
 ```
 
 ต้องเปิดผ่านเว็บเซิร์ฟเวอร์ (ไม่ใช่ `file://`) เพราะใช้ ES modules และ service worker
-บน Vercel เข้าที่ `/pointie/` ได้เลย
+
+## Deploy บน Vercel (แยกจากระบบจองห้องประชุม)
+
+Pointie เป็นโปรเจกต์ Vercel แยก ใช้ repo เดียวกันแต่ตั้ง Root Directory เป็น `pointie`
+
+1. vercel.com → **Add New → Project** → เลือก repo `somjeedth/book`
+2. **Root Directory** → `pointie` · Framework Preset → **Other** · ไม่ต้องมี Build Command
+3. **Deploy** → แอพจะอยู่ที่หน้าแรกของโดเมนใหม่ (เช่น `pointie-xxx.vercel.app`)
+4. Settings → Git → **Production Branch** ตั้งเป็น branch ที่มีโฟลเดอร์ `pointie/`
+
+header ความปลอดภัยของ Pointie อยู่ใน `pointie/vercel.json` (เปิดกล้อง/ตำแหน่งให้แอพนี้เท่านั้น)
+ส่วนโปรเจกต์ book เดิมไม่รวมโฟลเดอร์นี้ (ดู `.vercelignore` ที่ root)
 
 - **ลองใช้บัญชีตัวอย่าง** ที่หน้าแรก: เข้าเป็น "มายด์" (Lv.7) พร้อมบัตร ภารกิจ และ Badge ตามดีไซน์
 - **สมัครใหม่**: ใส่เบอร์มือถือ แล้วใช้รหัส OTP ที่แสดงในกล่อง "SMS (จำลอง)"
@@ -19,7 +30,7 @@ python3 -m http.server 8000
 
 ## ลิงก์สำหรับสแตนด์ NFC / QR ของร้าน
 
-เขียน URL นี้ลงแท็ก NFC หรือทำเป็น QR: `https://<โดเมน>/pointie/#/tap/<shopId>`
+เขียน URL นี้ลงแท็ก NFC หรือทำเป็น QR: `https://<โดเมน Pointie>/#/tap/<shopId>`
 เช่น `#/tap/baan` · `jae` · `plant` · `climb` · `noodle` · `roast` · `book` · `clay`
 
 - แตะแล้วยังไม่ล็อกอิน → หน้าเข้าสู่ระบบ แล้วกลับมารับแสตมป์อัตโนมัติ

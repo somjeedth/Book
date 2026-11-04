@@ -68,4 +68,4 @@ assets/home.js     หน้าแรก (ปฏิทินและตัว�
 
 ## Pointie — Customer Web App
 
-เว็บแอพลูกค้าของ Pointie (สะสมแสตมป์ผ่าน NFC) อยู่ในโฟลเดอร์ [`pointie/`](pointie/README.md) เปิดที่ `/pointie/`
+เว็บแอพลูกค้าของ Pointie (สะสมแสตมป์ผ่าน NFC) อยู่ในโฟลเดอร์ [`pointie/`](pointie/README.md) และ deploy แยกเป็นโปรเจกต์ Vercel ของตัวเอง (โปรเจกต์นี้ไม่รวม `pointie/` ตาม `.vercelignore`)
