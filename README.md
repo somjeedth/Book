@@ -65,3 +65,7 @@ assets/style.css   ธีมสีและคอมโพเนนต์
 assets/app.js      ข้อมูลตัวอย่าง, logic การจอง/ยกเลิก/อีเมล, แถบเมนู
 assets/home.js     หน้าแรก (ปฏิทินและตัวกรอง)
 ```
+
+## Pointie — Customer Web App
+
+เว็บแอพลูกค้าของ Pointie (สะสมแสตมป์ผ่าน NFC) อยู่ในโฟลเดอร์ [`pointie/`](pointie/README.md) เปิดที่ `/pointie/`
