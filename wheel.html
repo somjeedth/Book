@@ -140,7 +140,18 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .stock .sw { width: 14px; height: 14px; border-radius: 4px; }
 .stock .n { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
 .stock li.out { color: var(--muted); text-decoration: line-through; }
-.bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: -4px; }
+.stock.admin-on li { grid-template-columns: 14px minmax(0,1fr) auto auto; }
+.adj { display: inline-flex; gap: 4px; }
+.adj button { width: 28px; height: 28px; padding: 0; border-radius: 8px; font-size: 16px; line-height: 1; }
+.manage { border-top: 1px dashed var(--line); margin-top: 16px; padding-top: 14px; display: grid; gap: 8px; }
+.manage h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 15px; }
+.addrow { display: grid; grid-template-columns: minmax(0,1fr) 72px auto; gap: 8px; }
+.addrow input { font: inherit; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.addrow input:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.addrow button { padding: 8px 16px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.addrow button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, black); }
+.manage .hint { margin: 0; }
+.bar { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: -4px; }
 .bar b { display: block; height: 100%; background: var(--gold); transition: width .5s ease; }
 
 .log { list-style: none; margin: 0; padding: 0; display: grid; }
@@ -219,13 +230,23 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   </div>
   <div class="drawer-body">
       <div class="panel" id="paneStock" role="tabpanel">
-        <h2>ของที่เหลือ <small id="leftCount">– / 12 ชิ้น</small></h2>
+        <h2>ของที่เหลือ <small id="leftCount">–</small></h2>
         <ul class="stock" id="stock"></ul>
+        <form class="manage" id="manage" hidden autocomplete="off">
+          <h3>เพิ่มของรางวัล</h3>
+          <div class="addrow">
+            <input id="addName" list="nameList" maxlength="40" placeholder="ชื่อของ เช่น ร่ม" aria-label="ชื่อของรางวัล" required>
+            <input id="addQty" type="number" min="1" max="50" value="1" aria-label="จำนวน" inputmode="numeric">
+            <button type="submit" id="addBtn">เพิ่ม</button>
+          </div>
+          <datalist id="nameList"></datalist>
+          <p class="hint">ของใหม่จะเข้าวงล้อของทุกคนทันที ใช้ปุ่ม + / − ด้านบนเพิ่มหรือลดจำนวนของที่มีอยู่ (ลดได้เฉพาะชิ้นที่ยังไม่มีใครได้)</p>
+        </form>
       </div>
       <div class="panel" id="paneLog" role="tabpanel" hidden>
         <h2>ผลการสุ่ม <small id="wonCount"></small></h2>
         <ul class="log" id="log"></ul>
-        <p class="log-empty" id="logEmpty">ยังไม่มีใครหมุน คนแรกจะได้เลือกจากของครบทั้ง 12 ชิ้น</p>
+        <p class="log-empty" id="logEmpty">ยังไม่มีใครหมุน</p>
         <p class="hint" id="logHint" hidden>กดผิด? กด “คืนของ” ที่รายการของคุณ ของชิ้นนั้นจะกลับเข้าวงล้อ</p>
       </div>
       <div class="admin" id="admin" hidden>
@@ -249,16 +270,41 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
 <script>
 (function () {
-  // ---------- Prize list (fixed) ----------
-  const NAMES = ["หมอนอิง","หมอนอิง","กระเป๋าเดินทาง","หมวก","กระเป๋าสะพาย",
+  // ---------- Prize list ----------
+  // Shared mode reads prizes from the db ("prizes" collection); this list only seeds the offline/local mode.
+  const DEFAULT_NAMES = ["หมอนอิง","หมอนอิง","กระเป๋าเดินทาง","หมวก","กระเป๋าสะพาย",
                  "แก้วชมพู","แก้วฟ้า","แก้วส้ม","แก้วชมพู","แก้วฟ้า","แก้วส้ม","แก้วชมพู"];
-  const ITEMS = NAMES.map((name, i) => ({ id: "i" + String(i + 1).padStart(2, "0"), name }));
-  const COLORS = {
+  const DEFAULT_ITEMS = DEFAULT_NAMES.map((name, i) => ({ id: "i" + String(i + 1).padStart(2, "0"), name, at: i }));
+  const KNOWN = {
     "หมอนอิง": "#7a5cc2", "กระเป๋าเดินทาง": "#2b6f8f", "หมวก": "#3c8a5a", "กระเป๋าสะพาย": "#a86a2c",
     "แก้วชมพู": "#e56f9e", "แก้วฟ้า": "#4aa3e0", "แก้วส้ม": "#f08a3c"
   };
-  const TYPES = [...new Set(NAMES)];
-  const byId = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const EXTRA = ["#c0392b", "#14967f", "#d4a017", "#34495e", "#8bc34a", "#00838f", "#9e3d64", "#6d4c41", "#5c6bc0", "#e64a19"];
+  let assigned = {};
+  const COLORS = new Proxy({}, { get(_, name) {
+    name = String(name);
+    if (KNOWN[name]) return KNOWN[name];
+    if (assigned[name]) return assigned[name];
+    let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return EXTRA[h % EXTRA.length];
+  } });
+  let ITEMS = [], TYPES = [], byId = {};
+  function setItems(list) {
+    ITEMS = list.slice().sort((a, b) => (a.at || 0) - (b.at || 0) || (a.id < b.id ? -1 : 1));
+    TYPES = [...new Set(ITEMS.map(it => it.name))];
+    // give each new prize type its own colour, unused by the others
+    assigned = {}; let k = 0;
+    TYPES.filter(t => !KNOWN[t]).forEach(t => { if (k < EXTRA.length) assigned[t] = EXTRA[k++]; });
+    byId = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+    // keep this viewer's slice order, drop removed prizes, append new ones
+    const known = new Set(ITEMS.map(it => it.id));
+    const kept = (order || []).filter(id => known.has(id));
+    const added = ITEMS.map(it => it.id).filter(id => !kept.includes(id));
+    order = kept.length ? kept.concat(added) : spreadOrder(added);
+    store.set("wheel-order-v2", order);
+    const dl = $("nameList"); dl.textContent = "";
+    TYPES.forEach(t => { const o = document.createElement("option"); o.value = t; dl.appendChild(o); });
+  }
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ---------- Elements ----------
@@ -295,17 +341,15 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   // ---------- State ----------
   let order = store.get("wheel-order-v2");
-  if (!Array.isArray(order) || order.length !== ITEMS.length || !order.every(id => byId[id])) {
-    order = spreadOrder(ITEMS.map(it => it.id));
-    store.set("wheel-order-v2", order);
-  }
+  if (!Array.isArray(order)) order = [];
+  let rawClaims = {};       // everything in the claims store
   let claims = {};          // itemId -> {by, at, name}
   let shownClaims = {};     // what the wheel currently draws (frozen while spinning)
   let rotation = 0;
   let spinning = false;
   let busy = false;         // undo / reset in flight
   let mode = "connecting";  // connecting | shared | local
-  let canWrite = true, isOwner = false;
+  let canWrite = true, isOwner = false, isAdmin = false;
   let db = null, user = null, myId = null, names = {};
   let lastWin = null;       // id won in this visit (for modal undo)
   let highlightId = null, lightPhase = 0, lightsFast = false;
@@ -313,7 +357,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   let seenLog = null;       // ids already rendered in the log
 
   // ---------- Drawing ----------
-  function available(c) { return order.filter(id => !c[id]); }
+  function available(c) { return order.filter(id => byId[id] && !c[id]); }
 
   function sizeCanvas() {
     const r = canvas.getBoundingClientRect();
@@ -328,6 +372,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const W = canvas.width, R = W / 2, ids = available(shownClaims);
     ctx.clearRect(0, 0, W, W);
     $("emptyWheel").hidden = ids.length > 0 || mode === "connecting";
+    $("emptyWheel").innerHTML = ITEMS.length ? "ของรางวัลหมดแล้ว<br>ขอบคุณที่ร่วมสนุก" : "ยังไม่มีของรางวัล<br>เจ้าของหน้าเพิ่มได้ที่เมนู “ของที่เหลือ”";
     if (!ids.length) return;
     const seg = Math.PI * 2 / ids.length;
     const rOuter = R * 0.94;
@@ -406,8 +451,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const total = {}, left = {};
     ITEMS.forEach(it => { total[it.name] = (total[it.name] || 0) + 1; if (!C[it.id]) left[it.name] = (left[it.name] || 0) + 1; });
     const leftN = ITEMS.filter(it => !C[it.id]).length;
-    $("leftCount").textContent = (mode === "connecting" ? "–" : leftN) + " / " + ITEMS.length + " ชิ้น";
+    $("leftCount").textContent = mode === "connecting" ? "–" : leftN + " / " + ITEMS.length + " ชิ้น";
     const ul = $("stock"); ul.textContent = "";
+    ul.classList.toggle("admin-on", isAdmin);
+    $("manage").hidden = !isAdmin;
     TYPES.forEach(t => {
       const n = left[t] || 0, li = document.createElement("li");
       if (!n && mode !== "connecting") li.className = "out";
@@ -416,7 +463,18 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       const ct = document.createElement("span"); ct.className = "n"; ct.textContent = `เหลือ ${n} จาก ${total[t]}`;
       const bar = document.createElement("span"); bar.className = "bar";
       const b = document.createElement("b"); b.style.width = (n / total[t] * 100) + "%"; bar.appendChild(b);
-      li.append(sw, nm, ct, bar); ul.appendChild(li);
+      li.append(sw, nm, ct);
+      if (isAdmin) {
+        const adj = document.createElement("span"); adj.className = "adj";
+        const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−";
+        minus.setAttribute("aria-label", "ลด " + t + " 1 ชิ้น"); minus.disabled = busy || spinning || n === 0;
+        minus.addEventListener("click", () => removeOne(t));
+        const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+";
+        plus.setAttribute("aria-label", "เพิ่ม " + t + " 1 ชิ้น"); plus.disabled = busy || spinning;
+        plus.addEventListener("click", () => addPrizes(t, 1));
+        adj.append(minus, plus); li.append(adj);
+      }
+      li.append(bar); ul.appendChild(li);
     });
 
     const won = Object.entries(C).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
@@ -498,7 +556,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     if (!ids.length) return null;
     const id = ids[Math.floor(Math.random() * ids.length)];
     claims = { ...claims, [id]: { by: "local", at: Date.now(), name: byId[id].name } };
-    store.set("wheel-local-claims", claims);
+    rawClaims = claims; store.set("wheel-local-claims", claims);
     return id;
   }
 
@@ -508,6 +566,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     try {
       if (mode === "shared") await db.doc("claims/" + id).delete();
       const next = { ...claims }; delete next[id]; claims = next;
+      const raw = { ...rawClaims }; delete raw[id]; rawClaims = raw;
       if (mode === "local") store.set("wheel-local-claims", claims);
       say(`คืน “${byId[id].name}” เข้าวงล้อแล้ว`);
       if (lastWin === id) lastWin = null;
@@ -749,16 +808,59 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   $("resetYes").addEventListener("click", async () => {
     $("resetYes").disabled = true;
     try {
-      if (mode === "shared") { for (const it of ITEMS) await db.doc("claims/" + it.id).delete(); }
-      claims = {}; if (mode === "local") store.set("wheel-local-claims", claims);
+      if (mode === "shared") { for (const id of new Set([...ITEMS.map(it => it.id), ...Object.keys(rawClaims)])) await db.doc("claims/" + id).delete(); }
+      claims = {}; rawClaims = {}; if (mode === "local") store.set("wheel-local-claims", claims);
     } catch (e) { note.textContent = "รีเซ็ตไม่สำเร็จ ลองอีกครั้ง"; }
     $("resetYes").disabled = false; $("resetNo").click(); renderAll();
   });
 
+  // ---------- Adding / removing prizes (owner & editors) ----------
+  function recomputeClaims() {
+    const next = {};
+    for (const [id, v] of Object.entries(rawClaims)) if (v && v.by && byId[id]) next[id] = v;
+    claims = next;
+  }
+  async function addPrizes(name, qty) {
+    name = String(name || "").trim().slice(0, 40);
+    qty = Math.max(1, Math.min(50, Math.floor(Number(qty) || 1)));
+    if (!name || busy) return false;
+    busy = true; renderBoard(); refreshControls();
+    const base = Date.now();
+    const made = [];
+    for (let k = 0; k < qty; k++) made.push({ id: "p" + base.toString(36) + "-" + k + Math.random().toString(36).slice(2, 6), name, at: base + k });
+    let ok = true;
+    try {
+      if (mode === "shared") { for (const it of made) await db.collection("prizes").doc(it.id).set({ name: it.name, at: it.at }); }
+      else { setItems(ITEMS.concat(made)); store.set("wheel-local-prizes", ITEMS); }
+      say(`เพิ่ม “${name}” ${qty} ชิ้นแล้ว`);
+    } catch (e) { ok = false; say(e && e.code === "quota_exceeded" ? "เพิ่มไม่ได้ ที่เก็บข้อมูลเต็ม" : "เพิ่มของไม่สำเร็จ ลองอีกครั้ง"); }
+    busy = false; recomputeClaims(); renderAll();
+    return ok;
+  }
+  async function removeOne(name) {
+    if (busy) return;
+    const cand = ITEMS.filter(it => it.name === name && !claims[it.id]).pop();
+    if (!cand) return;
+    busy = true; renderBoard(); refreshControls();
+    try {
+      if (mode === "shared") { await db.doc("prizes/" + cand.id).delete(); await db.doc("claims/" + cand.id).delete(); }
+      else { setItems(ITEMS.filter(it => it.id !== cand.id)); store.set("wheel-local-prizes", ITEMS); }
+      say(`ลด “${name}” 1 ชิ้นแล้ว`);
+    } catch (e) { say("ลดจำนวนไม่สำเร็จ ลองอีกครั้ง"); }
+    busy = false; recomputeClaims(); renderAll();
+  }
+  $("manage").addEventListener("submit", async e => {
+    e.preventDefault();
+    const ok = await addPrizes($("addName").value, $("addQty").value);
+    if (ok) { $("addName").value = ""; $("addQty").value = "1"; $("addName").focus(); }
+  });
+
   // ---------- Modes ----------
   function startLocal(reason) {
-    mode = "local"; canWrite = true; isOwner = true;
-    claims = store.get("wheel-local-claims") || {};
+    mode = "local"; canWrite = true; isOwner = true; isAdmin = true;
+    const saved = store.get("wheel-local-prizes");
+    setItems(Array.isArray(saved) && saved.every(it => it && it.id && it.name) ? saved : DEFAULT_ITEMS);
+    rawClaims = store.get("wheel-local-claims") || {}; recomputeClaims();
     setStatus("warn", reason);
     $("admin").hidden = false;
     renderAll();
@@ -771,16 +873,30 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     if (user) {
       try { myId = await user.id(); } catch (e) {}
       try { isOwner = !!(await user.isOwner()); if (isOwner) $("admin").hidden = false; } catch (e) {}
+      try { isAdmin = isOwner || !!(await user.canEdit()); } catch (e) { isAdmin = isOwner; }
       try { const w = await user.can("data.write"); if (w === false) canWrite = false; } catch (e) {}
     }
     const timer = setTimeout(() => setStatus("warn", "ยังเชื่อมต่อไม่ได้ ข้อมูลอาจไม่ล่าสุด"), 10000);
+    let gotPrizes = false, gotClaims = false;
+    const ready = snap => {
+      if (gotPrizes && gotClaims && mode === "connecting") mode = "shared";
+      if (!snap.metadata.fromCache && gotPrizes && gotClaims) { clearTimeout(timer); setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน"); }
+      recomputeClaims(); renderAll();
+    };
+    const fail = () => {
+      clearTimeout(timer);
+      if (mode === "connecting") startLocal("เชื่อมต่อไม่ได้ ใช้โหมดเครื่องเดียว");
+      else setStatus("warn", "การเชื่อมต่อหลุด รีเฟรชหน้าเพื่อดูข้อมูลล่าสุด");
+    };
+    db.collection("prizes").onSnapshot(snap => {
+      const list = [];
+      snap.docs.forEach(d => { const v = d.data(); if (v && typeof v.name === "string" && v.name.trim()) list.push({ id: d.id, name: v.name.trim().slice(0, 40), at: Number(v.at) || 0 }); });
+      setItems(list); gotPrizes = true; ready(snap);
+    }, fail);
     db.collection("claims").onSnapshot(snap => {
       const next = {};
-      snap.docs.forEach(d => { const v = d.data(); if (v && v.by && byId[d.id]) next[d.id] = v; });
-      claims = next;
-      if (mode === "connecting") mode = "shared";
-      if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน"); }
-      renderAll();
+      snap.docs.forEach(d => { const v = d.data(); if (v && v.by) next[d.id] = v; });
+      rawClaims = next; gotClaims = true; ready(snap);
     }, () => {
       clearTimeout(timer);
       if (mode === "connecting") startLocal("เชื่อมต่อไม่ได้ ใช้โหมดเครื่องเดียว");
