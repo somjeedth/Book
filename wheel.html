@@ -23,6 +23,7 @@
   --gold: #c9962b;
   --hub: #1f2430;
   --good: #2f7d4f;
+  --glow: rgba(201, 150, 43, .55);
   --font-display: "Mitr", "IBM Plex Sans Thai", system-ui, sans-serif;
   --font-body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -30,12 +31,14 @@
   :root:not([data-theme="light"]) {
     --bg: #15171d; --surface: #1e2129; --ink: #eceae6; --muted: #9a9ea9; --line: #2e323c;
     --accent: #e0545c; --accent-ink: #1a0d0e; --gold: #e2b452; --hub: #0d0f13; --good: #5fbf86;
+    --glow: rgba(226, 180, 82, .45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #15171d; --surface: #1e2129; --ink: #eceae6; --muted: #9a9ea9; --line: #2e323c;
   --accent: #e0545c; --accent-ink: #1a0d0e; --gold: #e2b452; --hub: #0d0f13; --good: #5fbf86;
+  --glow: rgba(226, 180, 82, .45);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -60,7 +63,10 @@ h1 span { color: var(--accent); }
 @media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 
 .stage { display: grid; gap: 16px; justify-items: center; }
-.wheel-box { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; }
+.wheel-box { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; border-radius: 50%; transition: box-shadow .4s ease; }
+.wheel-box.spinning { box-shadow: 0 0 0 6px var(--glow), 0 0 60px 12px var(--glow); }
+.wheel-box.won { animation: wonPulse .5s ease-in-out 3; }
+@keyframes wonPulse { 50% { box-shadow: 0 0 0 10px var(--glow), 0 0 90px 30px var(--glow); transform: scale(1.015); } }
 .wheel-box canvas { width: 100%; height: 100%; display: block; }
 .pointer {
   position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
@@ -68,7 +74,7 @@ h1 span { color: var(--accent); }
   border-top: 34px solid var(--accent); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); z-index: 2;
 }
 .pointer.tick { animation: tick .12s ease-out; }
-@keyframes tick { 50% { transform: translateX(-50%) rotate(-12deg); } }
+@keyframes tick { 50% { transform: translateX(-50%) rotate(-14deg); } }
 .empty-wheel {
   position: absolute; inset: 12%; border-radius: 50%; border: 2px dashed var(--line);
   display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted);
@@ -88,8 +94,15 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .btn-spin {
   background: var(--accent); color: var(--accent-ink); border-color: transparent;
   font-family: var(--font-display); font-size: 20px; padding: 12px 40px; letter-spacing: .02em;
+  position: relative; overflow: hidden;
 }
 .btn-spin:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, black); }
+.btn-spin:not(:disabled)::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+  animation: shine 2.8s ease-in-out infinite;
+}
+@keyframes shine { 60%, 100% { transform: translateX(120%); } }
 .note { font-size: 13px; color: var(--muted); text-align: center; margin: 0; min-height: 1.6em; }
 
 .board { display: grid; gap: 16px; min-width: 0; }
@@ -102,31 +115,44 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .stock .n { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
 .stock li.out { color: var(--muted); text-decoration: line-through; }
 .bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: -4px; }
-.bar b { display: block; height: 100%; background: var(--gold); }
+.bar b { display: block; height: 100%; background: var(--gold); transition: width .5s ease; }
 
-.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-height: 320px; overflow-y: auto; }
-.log li { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.log { list-style: none; margin: 0; padding: 0; display: grid; max-height: 360px; overflow-y: auto; }
+.log li { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .log li:first-child { border-top: 0; }
+.log li.fresh { animation: fresh 1.2s ease; }
+@keyframes fresh { from { background: var(--glow); } }
 .log .who { overflow-wrap: anywhere; }
 .log .what { font-weight: 600; text-align: right; }
 .log .me { color: var(--accent); }
+.log .acts { display: flex; gap: 6px; }
+.log .acts button { padding: 3px 10px; font-size: 12px; border-radius: 8px; }
+.log .acts .danger { border-color: var(--accent); color: var(--accent); }
 .log-empty { color: var(--muted); font-size: 14px; margin: 0; }
+.hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
 
 .admin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
 .admin button { padding: 6px 14px; font-size: 13px; border-radius: 8px; }
 .admin .danger { border-color: var(--accent); color: var(--accent); }
 
-.overlay { position: fixed; inset: 0; background: rgba(10, 12, 16, .55); display: grid; place-items: center; z-index: 20; padding: 24px; }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+.overlay { position: fixed; inset: 0; background: rgba(10, 12, 16, .6); display: grid; place-items: center; z-index: 20; padding: 24px; }
 .card {
-  background: var(--surface); border-radius: 20px; padding: 28px 28px 24px; width: min(380px, 100%);
-  text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.35); border-top: 6px solid var(--gold);
-  animation: pop .35s cubic-bezier(.2,1.4,.4,1);
+  background: var(--surface); border-radius: 20px; padding: 28px 28px 22px; width: min(400px, 100%);
+  text-align: center; box-shadow: 0 0 0 2px var(--gold), 0 20px 80px var(--glow);
+  animation: pop .55s cubic-bezier(.2,1.5,.4,1);
+  display: grid; gap: 4px; justify-items: center;
 }
-@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pop { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .card p { margin: 0; color: var(--muted); }
-.card .prize { font-family: var(--font-display); font-size: 34px; font-weight: 600; color: var(--ink); margin: 6px 0 18px; line-height: 1.25; }
-.card .prize-sw { display: inline-block; width: 18px; height: 18px; border-radius: 5px; margin-right: 10px; vertical-align: middle; }
-@media (prefers-reduced-motion: reduce) { .card, .pointer.tick { animation: none; } }
+.card .prize { font-family: var(--font-display); font-size: clamp(30px, 8vw, 40px); font-weight: 600; color: var(--ink); margin: 4px 0 16px; line-height: 1.25; animation: prizeIn .7s .15s both cubic-bezier(.2,1.6,.4,1); }
+@keyframes prizeIn { from { transform: translateY(14px) scale(.6); opacity: 0; } }
+.card .prize-sw { display: inline-block; width: 20px; height: 20px; border-radius: 6px; margin-right: 10px; vertical-align: middle; }
+.linkish { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; padding: 8px; margin-top: 4px; }
+.linkish:hover:not(:disabled) { background: none; color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .card, .card .prize, .pointer.tick, .wheel-box.won, .btn-spin::after, .log li.fresh { animation: none !important; }
+}
 </style>
 
 <div class="wrap">
@@ -140,14 +166,14 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   <div class="grid">
     <section class="stage" aria-label="วงล้อ">
-      <div class="wheel-box">
+      <div class="wheel-box" id="wheelBox">
         <div class="pointer" id="pointer" aria-hidden="true"></div>
         <canvas id="wheel" role="img" aria-label="วงล้อของรางวัล"></canvas>
         <div class="empty-wheel" id="emptyWheel" hidden>ของรางวัลหมดแล้ว<br>ขอบคุณที่ร่วมสนุก</div>
       </div>
       <div class="controls">
         <button class="btn-spin" id="spinBtn" type="button" disabled>หมุนวงล้อ</button>
-        <button id="shuffleBtn" type="button">สลับตำแหน่ง</button>
+        <button id="shuffleBtn" type="button" title="จัดช่องใหม่ ให้ของชนิดเดียวกันไม่อยู่ติดกัน">สลับตำแหน่ง</button>
       </div>
       <p class="note" id="note"></p>
     </section>
@@ -161,6 +187,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
         <h2>ผลการสุ่ม <small id="wonCount"></small></h2>
         <ul class="log" id="log"></ul>
         <p class="log-empty" id="logEmpty">ยังไม่มีใครหมุน คนแรกจะได้เลือกจากของครบทั้ง 12 ชิ้น</p>
+        <p class="hint" id="logHint" hidden>กดผิด? กด “คืนของ” ที่รายการของคุณ ของชิ้นนั้นจะกลับเข้าวงล้อ</p>
       </div>
       <div class="admin" id="admin" hidden>
         <span>สำหรับเจ้าของหน้า:</span>
@@ -176,9 +203,11 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   <div class="card" role="dialog" aria-modal="true" aria-labelledby="prizeName">
     <p>ยินดีด้วย คุณได้รับ</p>
     <div class="prize"><span class="prize-sw" id="prizeSw"></span><span id="prizeName"></span></div>
-    <button class="btn-spin" id="closeBtn" type="button">ตกลง</button>
+    <button class="btn-spin" id="closeBtn" type="button">รับของ</button>
+    <button class="linkish" id="modalUndo" type="button">กดผิด คืนของชิ้นนี้เข้าวงล้อ</button>
   </div>
 </div>
+<canvas id="fx" aria-hidden="true"></canvas>
 
 <script>
 (function () {
@@ -192,11 +221,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   };
   const TYPES = [...new Set(NAMES)];
   const byId = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ---------- Elements ----------
   const $ = id => document.getElementById(id);
   const canvas = $("wheel"), ctx = canvas.getContext("2d");
-  const spinBtn = $("spinBtn"), shuffleBtn = $("shuffleBtn"), note = $("note");
+  const spinBtn = $("spinBtn"), shuffleBtn = $("shuffleBtn"), note = $("note"), wheelBox = $("wheelBox");
   const statusEl = $("status"), statusText = $("statusText");
 
   // ---------- Local helpers ----------
@@ -208,16 +238,41 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   function shuffled(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
+  // Count neighbouring slices of the same type (the wheel is a circle, so last touches first).
+  function clashes(ids) {
+    if (ids.length < 2) return 0;
+    let n = 0;
+    for (let i = 0; i < ids.length; i++) if (byId[ids[i]].name === byId[ids[(i + 1) % ids.length]].name) n++;
+    return n;
+  }
+  // Random order where same-type prizes are spread apart (best of many tries).
+  function spreadOrder(ids) {
+    let best = shuffled(ids), bestScore = clashes(best);
+    for (let k = 0; k < 2000 && bestScore > 0; k++) {
+      const cand = shuffled(ids), s = clashes(cand);
+      if (s < bestScore) { best = cand; bestScore = s; }
+    }
+    return best;
+  }
+
   // ---------- State ----------
-  let order = store.get("wheel-order");
-  if (!Array.isArray(order) || order.length !== ITEMS.length || !order.every(id => byId[id])) order = ITEMS.map(it => it.id);
+  let order = store.get("wheel-order-v2");
+  if (!Array.isArray(order) || order.length !== ITEMS.length || !order.every(id => byId[id])) {
+    order = spreadOrder(ITEMS.map(it => it.id));
+    store.set("wheel-order-v2", order);
+  }
   let claims = {};          // itemId -> {by, at, name}
   let shownClaims = {};     // what the wheel currently draws (frozen while spinning)
   let rotation = 0;
   let spinning = false;
+  let busy = false;         // undo / reset in flight
   let mode = "connecting";  // connecting | shared | local
-  let canWrite = true;
+  let canWrite = true, isOwner = false;
   let db = null, user = null, myId = null, names = {};
+  let lastWin = null;       // id won in this visit (for modal undo)
+  let highlightId = null, lightPhase = 0, lightsFast = false;
+  let confirmUndo = null;   // item id awaiting undo confirmation
+  let seenLog = null;       // ids already rendered in the log
 
   // ---------- Drawing ----------
   function available(c) { return order.filter(id => !c[id]); }
@@ -228,7 +283,6 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const px = Math.max(200, Math.round(r.width * dpr));
     if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
   }
-
   function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
   function draw() {
@@ -238,16 +292,26 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     $("emptyWheel").hidden = ids.length > 0 || mode === "connecting";
     if (!ids.length) return;
     const seg = Math.PI * 2 / ids.length;
-    const rOuter = R * 0.96;
+    const rOuter = R * 0.94;
+    const gold = css("--gold");
     ctx.save();
     ctx.translate(R, R);
     // rim
-    ctx.beginPath(); ctx.arc(0, 0, R * 0.995, 0, Math.PI * 2); ctx.fillStyle = css("--gold"); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.995, 0, Math.PI * 2);
+    const rim = ctx.createRadialGradient(0, 0, R * 0.9, 0, 0, R);
+    rim.addColorStop(0, gold); rim.addColorStop(.5, "#f3d68a"); rim.addColorStop(1, gold);
+    ctx.fillStyle = rim; ctx.fill();
     ctx.rotate(rotation);
     ids.forEach((id, i) => {
       const a0 = -Math.PI / 2 + i * seg, a1 = a0 + seg;
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, rOuter, a0, a1); ctx.closePath();
-      ctx.fillStyle = COLORS[byId[id].name]; ctx.fill();
+      const col = COLORS[byId[id].name];
+      const g = ctx.createRadialGradient(0, 0, R * 0.12, 0, 0, rOuter);
+      g.addColorStop(0, shade(col, -0.25)); g.addColorStop(.75, col); g.addColorStop(1, shade(col, 0.15));
+      ctx.fillStyle = g; ctx.fill();
+      if (highlightId === id) {
+        ctx.fillStyle = "rgba(255,255,255," + (0.25 + 0.25 * Math.sin(performance.now() / 70)) + ")"; ctx.fill();
+      }
       ctx.lineWidth = Math.max(2, W / 260); ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.stroke();
       // label
       ctx.save();
@@ -255,31 +319,55 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffffff";
       const fs = Math.min(R * 0.085, R * seg * 0.42);
       ctx.font = `500 ${fs}px Mitr, "IBM Plex Sans Thai", sans-serif`;
-      ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 3;
+      ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 4;
       ctx.fillText(byId[id].name, rOuter - R * 0.07, 0, rOuter * 0.62);
       ctx.restore();
     });
     ctx.restore();
-    // studs on rim
+    // marquee bulbs on the rim
     ctx.save(); ctx.translate(R, R);
-    for (let k = 0; k < 24; k++) {
-      const a = k * Math.PI / 12;
-      ctx.beginPath(); ctx.arc(Math.cos(a) * R * 0.978, Math.sin(a) * R * 0.978, R * 0.011, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff6dc"; ctx.fill();
+    const BULBS = 24;
+    for (let k = 0; k < BULBS; k++) {
+      const a = k * Math.PI * 2 / BULBS;
+      const on = (k + lightPhase) % (lightsFast ? 3 : 2) === 0;
+      const x = Math.cos(a) * R * 0.968, y = Math.sin(a) * R * 0.968;
+      if (on) {
+        ctx.beginPath(); ctx.arc(x, y, R * 0.03, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,180,.35)"; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(x, y, R * 0.013, 0, Math.PI * 2);
+      ctx.fillStyle = on ? "#fffbe8" : "#a7782a"; ctx.fill();
     }
     // hub
     ctx.beginPath(); ctx.arc(0, 0, R * 0.13, 0, Math.PI * 2); ctx.fillStyle = css("--hub"); ctx.fill();
-    ctx.lineWidth = R * 0.025; ctx.strokeStyle = css("--gold"); ctx.stroke();
-    ctx.fillStyle = css("--gold"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.lineWidth = R * 0.025; ctx.strokeStyle = gold; ctx.stroke();
+    ctx.fillStyle = gold; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = `600 ${R * 0.07}px Mitr, sans-serif`; ctx.fillText(String(ids.length), 0, 0);
     ctx.restore();
   }
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const t = amt < 0 ? 0 : 255, p = Math.abs(amt);
+    r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // Idle marquee blink
+  setInterval(() => { if (!spinning && !reduceMotion) { lightPhase++; draw(); } }, 600);
 
   // ---------- Board ----------
+  function canUndo(c) {
+    if (mode === "local") return true;
+    if (!canWrite) return false;
+    return isOwner || (c.by && c.by === myId);
+  }
+
   async function renderBoard() {
+    const C = spinning ? shownClaims : claims;
     const total = {}, left = {};
-    ITEMS.forEach(it => { total[it.name] = (total[it.name] || 0) + 1; if (!claims[it.id]) left[it.name] = (left[it.name] || 0) + 1; });
-    const leftN = ITEMS.filter(it => !claims[it.id]).length;
+    ITEMS.forEach(it => { total[it.name] = (total[it.name] || 0) + 1; if (!C[it.id]) left[it.name] = (left[it.name] || 0) + 1; });
+    const leftN = ITEMS.filter(it => !C[it.id]).length;
     $("leftCount").textContent = (mode === "connecting" ? "–" : leftN) + " / " + ITEMS.length + " ชิ้น";
     const ul = $("stock"); ul.textContent = "";
     TYPES.forEach(t => {
@@ -293,9 +381,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       li.append(sw, nm, ct, bar); ul.appendChild(li);
     });
 
-    const won = Object.entries(claims).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    const won = Object.entries(C).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
     $("wonCount").textContent = won.length ? won.length + " รายการ" : "";
     $("logEmpty").hidden = won.length > 0;
+    $("logHint").hidden = !won.some(([, c]) => canUndo(c));
     if (user && mode === "shared") {
       const ids = [...new Set(won.map(w => w[1].by).filter(Boolean))];
       try { names = ids.length ? await user.profiles(ids) : {}; } catch (e) {}
@@ -303,6 +392,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const log = $("log"); log.textContent = "";
     won.forEach(([id, c]) => {
       const li = document.createElement("li");
+      if (seenLog && !seenLog.has(id)) li.className = "fresh";
       const who = document.createElement("span"); who.className = "who";
       const isMe = c.by && c.by === myId;
       const nm = mode === "local" ? "เครื่องนี้" : ((names[c.by] && names[c.by].name) || "ผู้ร่วมสนุก");
@@ -310,36 +400,50 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       if (isMe) who.classList.add("me");
       const what = document.createElement("span"); what.className = "what"; what.textContent = byId[id].name;
       what.style.color = COLORS[byId[id].name];
-      const t = document.createElement("span");
-      li.append(who, what); log.appendChild(li);
+      const acts = document.createElement("span"); acts.className = "acts";
+      if (canUndo(c)) {
+        if (confirmUndo === id) {
+          const yes = document.createElement("button"); yes.type = "button"; yes.className = "danger"; yes.textContent = "ยืนยันคืน";
+          yes.disabled = busy || spinning; yes.addEventListener("click", () => undo(id));
+          const no = document.createElement("button"); no.type = "button"; no.textContent = "ไม่";
+          no.addEventListener("click", () => { confirmUndo = null; renderBoard(); });
+          acts.append(yes, no);
+        } else {
+          const u = document.createElement("button"); u.type = "button"; u.textContent = "คืนของ";
+          u.title = "ยกเลิกรายการนี้ ของจะกลับเข้าวงล้อ";
+          u.disabled = busy || spinning; u.addEventListener("click", () => { confirmUndo = id; renderBoard(); });
+          acts.append(u);
+        }
+      }
+      li.append(who, what, acts); log.appendChild(li);
     });
+    seenLog = new Set(won.map(w => w[0]));
   }
+
+  let noteHold = 0;
+  function say(m) { note.textContent = m; noteHold = Date.now() + 3000; setTimeout(() => { if (!spinning) refreshControls(); }, 3100); }
 
   function refreshControls() {
     const left = available(claims).length;
-    spinBtn.disabled = spinning || mode === "connecting" || !canWrite || left === 0;
+    spinBtn.disabled = spinning || busy || mode === "connecting" || !canWrite || left === 0;
     shuffleBtn.disabled = spinning || left < 2;
     if (mode === "connecting") note.textContent = "กำลังโหลดของรางวัล…";
-    else if (!canWrite) note.textContent = "ลิงก์นี้เปิดให้ดูอย่างเดียว ขอสิทธิ์ผู้ร่วมแก้ไข (Contributor) จากเจ้าของหน้าเพื่อหมุน";
+    else if (!canWrite) note.textContent = "ลิงก์นี้เปิดให้ดูอย่างเดียว ขอสิทธิ์ Contributor จากเจ้าของหน้าเพื่อหมุน";
     else if (left === 0) note.textContent = "ของรางวัลหมดแล้ว";
-    else if (!spinning) note.textContent = mode === "local" ? "โหมดเครื่องเดียว: ผลการสุ่มเก็บไว้ในเบราว์เซอร์นี้เท่านั้น" : "";
+    else if (!spinning && Date.now() > noteHold) note.textContent = mode === "local" ? "โหมดเครื่องเดียว: ผลการสุ่มเก็บไว้ในเบราว์เซอร์นี้เท่านั้น" : "";
   }
 
   function renderAll() {
     if (!spinning) shownClaims = claims;
     draw(); renderBoard(); refreshControls();
   }
+  function setStatus(kind, text) { statusEl.className = "status " + kind; statusText.textContent = text; }
 
-  function setStatus(kind, text) {
-    statusEl.className = "status " + kind; statusText.textContent = text;
-  }
-
-  // ---------- Claiming ----------
+  // ---------- Claiming / undo ----------
   async function claimShared() {
     for (const id of shuffled(available(claims))) {
       const ref = db.doc("claims/" + id);
-      let lease;
-      try { lease = await ref.acquire({ holder: tabId, ttlMs: 5000 }); } catch (e) { throw e; }
+      const lease = await ref.acquire({ holder: tabId, ttlMs: 5000 });
       if (!lease.acquired) continue;
       const snap = await ref.get();
       const d = snap.exists ? snap.data() : null;
@@ -349,7 +453,6 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     }
     return null;
   }
-
   function claimLocal() {
     const ids = available(claims);
     if (!ids.length) return null;
@@ -357,6 +460,21 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     claims = { ...claims, [id]: { by: "local", at: Date.now(), name: byId[id].name } };
     store.set("wheel-local-claims", claims);
     return id;
+  }
+
+  async function undo(id) {
+    if (busy) return;
+    busy = true; renderBoard(); refreshControls();
+    try {
+      if (mode === "shared") await db.doc("claims/" + id).delete();
+      const next = { ...claims }; delete next[id]; claims = next;
+      if (mode === "local") store.set("wheel-local-claims", claims);
+      say(`คืน “${byId[id].name}” เข้าวงล้อแล้ว`);
+      if (lastWin === id) lastWin = null;
+    } catch (e) {
+      note.textContent = "คืนของไม่สำเร็จ ลองอีกครั้ง";
+    }
+    busy = false; confirmUndo = null; renderAll();
   }
 
   // ---------- Spin ----------
@@ -368,65 +486,187 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       const jitter = (Math.random() - 0.5) * seg * 0.7;
       const want = -((idx + 0.5) * seg + jitter);
       const TAU = Math.PI * 2;
-      let delta = ((want - rotation) % TAU + TAU) % TAU;
-      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const turns = reduce ? 1 : 5 + Math.floor(Math.random() * 2);
+      const delta = ((want - rotation) % TAU + TAU) % TAU;
+      const turns = reduceMotion ? 1 : 6 + Math.floor(Math.random() * 2);
       const start = rotation, end = rotation + delta + turns * TAU;
-      const dur = reduce ? 900 : 5200 + Math.random() * 800;
+      const dur = reduceMotion ? 900 : 6000 + Math.random() * 1000;
       const t0 = performance.now();
-      let lastSeg = Math.floor(((-start % TAU) + TAU) % TAU / seg);
+      let lastSeg = -1;
       const ptr = $("pointer");
+      lightsFast = true;
       function frame(now) {
         const t = Math.min(1, (now - t0) / dur);
-        const e = 1 - Math.pow(1 - t, 4);
+        // wind-up back a little, then fast, then a long ease-out
+        const e = t < 0.06 ? -0.004 * Math.sin(t / 0.06 * Math.PI) : 1 - Math.pow(1 - (t - 0.06) / 0.94, 4);
         rotation = start + (end - start) * e;
+        lightPhase = Math.floor(now / 70);
         draw();
         const s = Math.floor(((-rotation % TAU) + TAU) % TAU / seg);
         if (s !== lastSeg) { lastSeg = s; ptr.classList.remove("tick"); void ptr.offsetWidth; ptr.classList.add("tick"); }
-        if (t < 1) requestAnimationFrame(frame); else { rotation = rotation % TAU; resolve(); }
+        if (t < 1) requestAnimationFrame(frame); else { rotation = rotation % TAU; lightsFast = false; resolve(); }
       }
       requestAnimationFrame(frame);
     });
   }
 
+  async function flashWinner(id) {
+    highlightId = id;
+    wheelBox.classList.add("won");
+    const t0 = performance.now();
+    await new Promise(res => {
+      (function f(now) { lightPhase = Math.floor(now / 120); draw(); if (now - t0 < (reduceMotion ? 300 : 1400)) requestAnimationFrame(f); else res(); })(t0);
+    });
+    wheelBox.classList.remove("won");
+    highlightId = null;
+  }
+
   spinBtn.addEventListener("click", async () => {
-    if (spinning) return;
-    spinning = true; shownClaims = claims; refreshControls();
+    if (spinning || busy) return;
+    spinning = true; shownClaims = claims; confirmUndo = null; refreshControls(); renderBoard();
+    wheelBox.classList.add("spinning");
     note.textContent = "กำลังจับรางวัล…";
     let id = null;
     try {
       id = mode === "shared" ? await claimShared() : claimLocal();
     } catch (e) {
-      spinning = false;
-      if (e && e.code === "invalid_argument") { canWrite = false; }
+      spinning = false; wheelBox.classList.remove("spinning");
+      if (e && e.code === "invalid_argument") canWrite = false;
       note.textContent = canWrite ? "หมุนไม่สำเร็จ ลองกดอีกครั้ง" : "";
       renderAll(); return;
     }
-    if (!id) { spinning = false; note.textContent = "ของรางวัลหมดแล้ว"; renderAll(); return; }
+    if (!id) { spinning = false; wheelBox.classList.remove("spinning"); note.textContent = "ของรางวัลหมดแล้ว"; renderAll(); return; }
     note.textContent = "";
     await animateTo(id);
+    wheelBox.classList.remove("spinning");
+    await flashWinner(id);
+    lastWin = id;
+    claims = { ...claims, [id]: claims[id] || { by: myId, at: Date.now(), name: byId[id].name } };
     $("prizeName").textContent = byId[id].name;
     $("prizeSw").style.background = COLORS[byId[id].name];
+    $("modalUndo").disabled = false;
     $("overlay").hidden = false;
     $("closeBtn").focus();
-    // record locally in case the snapshot hasn't arrived yet
-    claims = { ...claims, [id]: claims[id] || { by: myId, at: Date.now(), name: byId[id].name } };
+    celebrate(COLORS[byId[id].name]);
   });
 
-  $("closeBtn").addEventListener("click", () => {
+  function closeModal() {
     $("overlay").hidden = true;
     spinning = false; rotation = 0;
     renderAll(); spinBtn.focus();
+  }
+  $("closeBtn").addEventListener("click", closeModal);
+  $("modalUndo").addEventListener("click", async () => {
+    const id = lastWin; if (!id) return closeModal();
+    $("modalUndo").disabled = true;
+    $("overlay").hidden = true; spinning = false; rotation = 0;
+    fx.stop();
+    await undo(id);
+    spinBtn.focus();
   });
 
-  shuffleBtn.addEventListener("click", () => {
+  shuffleBtn.addEventListener("click", async () => {
     if (spinning) return;
-    // shuffle until the visible order actually changes
-    const before = available(claims).join();
-    for (let k = 0; k < 6; k++) { order = shuffled(order); if (available(claims).join() !== before) break; }
-    store.set("wheel-order", order);
-    rotation = 0; renderAll();
+    const vis = available(claims);
+    const before = vis.join();
+    let arranged = spreadOrder(vis);
+    for (let k = 0; k < 5 && arranged.join() === before; k++) arranged = spreadOrder(vis);
+    // claimed items keep their place at the end; they come back there if returned
+    order = arranged.concat(order.filter(id => claims[id]));
+    store.set("wheel-order-v2", order);
+    // quick whirl
+    shuffleBtn.disabled = true;
+    const start = rotation, t0 = performance.now(), dur = reduceMotion ? 1 : 700;
+    await new Promise(res => {
+      (function f(now) {
+        const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+        rotation = start + e * Math.PI * 2; lightPhase = Math.floor(now / 60); draw();
+        if (t < 1) requestAnimationFrame(f); else res();
+      })(t0);
+    });
+    rotation = 0;
+    const c = clashes(arranged);
+    renderAll();
+    say(c === 0 ? "สลับแล้ว ของชนิดเดียวกันไม่อยู่ติดกัน" : "สลับแล้ว (ของที่เหลือบางชนิดมีมากจนต้องอยู่ติดกัน)");
   });
+
+  // ---------- Fireworks + confetti ----------
+  const fxCanvas = $("fx"), fctx = fxCanvas.getContext("2d");
+  const fx = (() => {
+    let parts = [], rockets = [], running = false, until = 0, palette = [];
+    function resize() {
+      const d = window.devicePixelRatio || 1;
+      fxCanvas.width = innerWidth * d; fxCanvas.height = innerHeight * d;
+      fctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    function burst(x, y) {
+      const n = 70 + Math.floor(Math.random() * 40);
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      const ring = Math.random() < 0.35;
+      for (let i = 0; i < n; i++) {
+        const a = Math.PI * 2 * i / n + Math.random() * 0.1;
+        const sp = ring ? 5 : 1.5 + Math.random() * 5;
+        parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.012 + Math.random() * 0.012,
+                     col: Math.random() < 0.25 ? "#fff6d0" : col, size: 2 + Math.random() * 1.5, kind: "spark" });
+      }
+    }
+    function launch() {
+      rockets.push({ x: innerWidth * (0.15 + Math.random() * 0.7), y: innerHeight + 10,
+                     vx: (Math.random() - 0.5) * 2, vy: -(innerHeight / 60) - Math.random() * 4,
+                     ty: innerHeight * (0.12 + Math.random() * 0.35) });
+    }
+    function confetti() {
+      for (let i = 0; i < 140; i++) parts.push({
+        x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.5,
+        vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, life: 1, decay: 0.0035,
+        col: palette[i % palette.length], w: 6 + Math.random() * 6, h: 3 + Math.random() * 4,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, kind: "paper" });
+    }
+    let nextLaunch = 0;
+    function step(now) {
+      fctx.globalCompositeOperation = "source-over";
+      fctx.clearRect(0, 0, innerWidth, innerHeight);
+      if (now < until && now > nextLaunch) { launch(); if (Math.random() < 0.4) launch(); nextLaunch = now + 260 + Math.random() * 300; }
+      rockets = rockets.filter(r => {
+        r.x += r.vx; r.y += r.vy; r.vy += 0.12;
+        fctx.fillStyle = "#fff3c4"; fctx.beginPath(); fctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2); fctx.fill();
+        parts.push({ x: r.x, y: r.y, vx: (Math.random() - .5) * .5, vy: 1, life: .6, decay: .04, col: "#ffcc66", size: 1.5, kind: "spark" });
+        if (r.y <= r.ty || r.vy >= 0) { burst(r.x, r.y); return false; }
+        return true;
+      });
+      fctx.globalCompositeOperation = "lighter";
+      parts = parts.filter(p => {
+        p.life -= p.decay;
+        if (p.life <= 0 || p.y > innerHeight + 30) return false;
+        if (p.kind === "spark") {
+          p.vx *= 0.97; p.vy = p.vy * 0.97 + 0.06; p.x += p.vx; p.y += p.vy;
+          fctx.globalAlpha = Math.max(0, p.life);
+          fctx.fillStyle = p.col; fctx.beginPath(); fctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); fctx.fill();
+        } else {
+          fctx.globalCompositeOperation = "source-over";
+          p.x += p.vx + Math.sin(now / 300 + p.rot) * 0.6; p.y += p.vy; p.rot += p.vr;
+          fctx.globalAlpha = Math.min(1, p.life * 2);
+          fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot); fctx.scale(1, Math.cos(now / 160 + p.rot));
+          fctx.fillStyle = p.col; fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); fctx.restore();
+          fctx.globalCompositeOperation = "lighter";
+        }
+        return true;
+      });
+      fctx.globalAlpha = 1;
+      if (parts.length || rockets.length || now < until) requestAnimationFrame(step);
+      else { running = false; fctx.clearRect(0, 0, innerWidth, innerHeight); }
+    }
+    return {
+      play(color) {
+        palette = [color, "#ffd166", "#ef476f", "#06d6a0", "#4cc9f0", "#f8f9fa", color];
+        resize();
+        if (reduceMotion) { confetti(); parts = parts.slice(0, 40); }
+        else { until = performance.now() + 3200; nextLaunch = 0; burst(innerWidth / 2, innerHeight * 0.3); confetti(); }
+        if (!running) { running = true; requestAnimationFrame(step); }
+      },
+      stop() { parts = []; rockets = []; until = 0; }
+    };
+  })();
+  function celebrate(color) { fx.play(color); }
 
   // ---------- Owner reset ----------
   $("resetBtn").addEventListener("click", () => { $("resetBtn").hidden = true; $("resetYes").hidden = false; $("resetNo").hidden = false; });
@@ -435,14 +675,14 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     $("resetYes").disabled = true;
     try {
       if (mode === "shared") { for (const it of ITEMS) await db.doc("claims/" + it.id).delete(); }
-      else { claims = {}; store.set("wheel-local-claims", claims); }
+      claims = {}; if (mode === "local") store.set("wheel-local-claims", claims);
     } catch (e) { note.textContent = "รีเซ็ตไม่สำเร็จ ลองอีกครั้ง"; }
     $("resetYes").disabled = false; $("resetNo").click(); renderAll();
   });
 
   // ---------- Modes ----------
   function startLocal(reason) {
-    mode = "local"; canWrite = true;
+    mode = "local"; canWrite = true; isOwner = true;
     claims = store.get("wheel-local-claims") || {};
     setStatus("warn", reason);
     $("admin").hidden = false;
@@ -455,10 +695,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     if (!db) { startLocal("ไม่ได้เชื่อมต่อ ใช้โหมดเครื่องเดียว"); return; }
     if (user) {
       try { myId = await user.id(); } catch (e) {}
-      try { if (await user.isOwner()) $("admin").hidden = false; } catch (e) {}
+      try { isOwner = !!(await user.isOwner()); if (isOwner) $("admin").hidden = false; } catch (e) {}
       try { const w = await user.can("data.write"); if (w === false) canWrite = false; } catch (e) {}
     }
-    let timer = setTimeout(() => setStatus("warn", "ยังเชื่อมต่อไม่ได้ ข้อมูลอาจไม่ล่าสุด"), 10000);
+    const timer = setTimeout(() => setStatus("warn", "ยังเชื่อมต่อไม่ได้ ข้อมูลอาจไม่ล่าสุด"), 10000);
     db.collection("claims").onSnapshot(snap => {
       const next = {};
       snap.docs.forEach(d => { const v = d.data(); if (v && v.by && byId[d.id]) next[d.id] = v; });
@@ -466,7 +706,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       if (mode === "connecting") mode = "shared";
       if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน"); }
       renderAll();
-    }, err => {
+    }, () => {
       clearTimeout(timer);
       if (mode === "connecting") startLocal("เชื่อมต่อไม่ได้ ใช้โหมดเครื่องเดียว");
       else setStatus("warn", "การเชื่อมต่อหลุด รีเฟรชหน้าเพื่อดูข้อมูลล่าสุด");
